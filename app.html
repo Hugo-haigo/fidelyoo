@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard — Fidelyoo</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>body{font-family:'Inter',sans-serif;background:#0f0f13;color:#f0ede8;}</style>
+</head>
+<body class="antialiased">
+  <div class="flex h-screen">
+    <!-- Sidebar -->
+    <aside class="w-64 bg-white/3 border-r border-white/8 flex flex-col">
+      <div class="p-6 border-b border-white/8">
+        <div class="text-xl font-bold bg-gradient-to-r from-violet-400 to-sky-400 bg-clip-text text-transparent">Fidelyoo</div>
+        <div class="text-xs text-white/40 mt-0.5">Espace commerçant</div>
+      </div>
+      <nav class="flex-1 p-4 space-y-1">
+        <a href="app.html" class="flex items-center gap-3 px-3 py-2 rounded-lg bg-violet-500/15 text-violet-300 text-sm font-medium">
+          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+          Tableau de bord
+        </a>
+        <a href="card-editor.html" class="flex items-center gap-3 px-3 py-2 rounded-lg text-white/50 hover:text-white hover:bg-white/5 text-sm transition">
+          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
+          Carte de fidélité
+        </a>
+        <a href="scan.html" class="flex items-center gap-3 px-3 py-2 rounded-lg text-white/50 hover:text-white hover:bg-white/5 text-sm transition">
+          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"/></svg>
+          Interface caisse
+        </a>
+      </nav>
+      <div class="p-4 border-t border-white/8">
+        <a href="index.html" class="flex items-center gap-2 text-white/40 hover:text-white/70 text-sm transition">
+          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+          Déconnexion
+        </a>
+      </div>
+    </aside>
+
+    <!-- Main -->
+    <main class="flex-1 overflow-auto">
+      <div class="p-8">
+        <div class="mb-8">
+          <h1 class="text-2xl font-bold">Bonjour 👋</h1>
+          <p class="text-white/50 text-sm mt-1">Voici un aperçu de votre programme de fidélité</p>
+        </div>
+
+        <!-- Stats -->
+        <div class="grid grid-cols-4 gap-4 mb-8">
+          <div class="bg-white/5 border border-white/8 rounded-xl p-5">
+            <div class="text-white/50 text-xs font-medium mb-1">Clients total</div>
+            <div class="text-3xl font-bold">248</div>
+            <div class="text-emerald-400 text-xs mt-1">+12 ce mois</div>
+          </div>
+          <div class="bg-white/5 border border-white/8 rounded-xl p-5">
+            <div class="text-white/50 text-xs font-medium mb-1">Scans ce mois</div>
+            <div class="text-3xl font-bold">1,847</div>
+            <div class="text-emerald-400 text-xs mt-1">+8% vs mois dernier</div>
+          </div>
+          <div class="bg-white/5 border border-white/8 rounded-xl p-5">
+            <div class="text-white/50 text-xs font-medium mb-1">Récompenses données</div>
+            <div class="text-3xl font-bold">34</div>
+            <div class="text-white/30 text-xs mt-1">Ce mois</div>
+          </div>
+          <div class="bg-white/5 border border-white/8 rounded-xl p-5">
+            <div class="text-white/50 text-xs font-medium mb-1">Taux de retour</div>
+            <div class="text-3xl font-bold">68%</div>
+            <div class="text-emerald-400 text-xs mt-1">+5pts vs mois dernier</div>
+          </div>
+        </div>
+
+        <!-- Recent clients -->
+        <div class="bg-white/5 border border-white/8 rounded-xl">
+          <div class="p-5 border-b border-white/8 flex items-center justify-between">
+            <h2 class="font-semibold text-sm">Clients récents</h2>
+            <a href="#" class="text-violet-400 text-xs hover:text-violet-300">Voir tous →</a>
+          </div>
+          <table class="w-full">
+            <thead>
+              <tr class="border-b border-white/5">
+                <th class="text-left p-4 text-xs text-white/40 font-medium">Client</th>
+                <th class="text-left p-4 text-xs text-white/40 font-medium">Tampons</th>
+                <th class="text-left p-4 text-xs text-white/40 font-medium">Dernier scan</th>
+                <th class="text-left p-4 text-xs text-white/40 font-medium">Statut</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr clapp.htmlass="border-b border-white/5 hover:bg-white/3 cursor-pointer" onclick="window.location.href='client-detail.html'">
+                <td class="p-4 text-sm">Marie Dupont</td>
+                <td class="p-4 text-sm">8/10</td>
+                <td class="p-4 text-sm text-white/50">Aujourd'hui</td>
+                <td class="p-4"><span class="bg-emerald-500/20 text-emerald-400 text-xs px-2 py-0.5 rounded-full">Actif</span></td>
+              </tr>
+              <tr class="border-b border-white/5 hover:bg-white/3 cursor-pointer">
+                <td class="p-4 text-sm">Jean Martin</td>
+                <td class="p-4 text-sm">3/10</td>
+                <td class="p-4 text-sm text-white/50">Hier</td>
+                <td class="p-4"><span class="bg-emerald-500/20 text-emerald-400 text-xs px-2 py-0.5 rounded-full">Actif</span></td>
+              </tr>
+              <tr class="hover:bg-white/3 cursor-pointer">
+                <td class="p-4 text-sm">Sophie Legrand</td>
+                <td class="p-4 text-sm">10/10 ✨</td>
+                <td class="p-4 text-sm text-white/50">Il y a 3 jours</td>
+                <td class="p-4"><span class="bg-violet-500/20 text-violet-300 text-xs px-2 py-0.5 rounded-full">Récompense dispo</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+  </div>
+</body>
+</html>
