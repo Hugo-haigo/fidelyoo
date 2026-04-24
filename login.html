@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Connexion — Fidelyoo</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>body { font-family: 'Inter', sans-serif; background: #0f0f13; color: #f0ede8; }</style>
+</head>
+<body class="antialiased min-h-screen flex items-center justify-center px-4">
+
+  <div class="w-full max-w-md">
+    <!-- Logo -->
+    <div class="text-center mb-8">
+      <a href="index.html" class="inline-block">
+        <div class="text-2xl font-bold bg-gradient-to-r from-violet-400 to-sky-400 bg-clip-text text-transparent">Fidelyoo</div>
+      </a>
+      <p class="text-white/50 text-sm mt-2">Espace commerçant</p>
+    </div>
+
+    <!-- Card -->
+    <div class="bg-white/5 border border-white/10 rounded-2xl p-8">
+      <!-- Tabs -->
+      <div class="flex bg-white/5 rounded-xl p-1 mb-6">
+        <button id="tab-login" onclick="showTab('login')" class="flex-1 py-2 text-sm font-medium rounded-lg bg-white/10 text-white transition">Connexion</button>
+        <button id="tab-signup" onclick="showTab('signup')" class="flex-1 py-2 text-sm font-medium text-white/50 transition hover:text-white">Inscription</button>
+      </div>
+
+      <!-- Login Form -->
+      <form id="form-login" onsubmit="handleLogin(event)" class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-white/70 mb-1.5">Email</label>
+          <input type="email" required placeholder="vous@email.com" class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white placeholder-white/30 focus:outline-none focus:border-violet-500 transition">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-white/70 mb-1.5">Mot de passe</label>
+          <input type="password" required placeholder="••••••••" class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white placeholder-white/30 focus:outline-none focus:border-violet-500 transition">
+        </div>
+        <button type="submit" class="w-full bg-violet-600 hover:bg-violet-500 text-white font-semibold py-2.5 rounded-xl transition shadow-lg shadow-violet-500/20">
+          Se connecter →
+        </button>
+        <p class="text-center text-white/40 text-xs">
+          <a href="#" class="hover:text-white/70 transition">Mot de passe oublié ?</a>
+        </p>
+      </form>
+
+      <!-- Signup Form -->
+      <form id="form-signup" onsubmit="handleSignup(event)" class="space-y-4 hidden">
+        <div>
+          <label class="block text-sm font-medium text-white/70 mb-1.5">Nom de votre commerce</label>
+          <input type="text" required placeholder="Ex: Boulangerie Martin" class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white placeholder-white/30 focus:outline-none focus:border-violet-500 transition">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-white/70 mb-1.5">Email</label>
+          <input type="email" required placeholder="vous@email.com" class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white placeholder-white/30 focus:outline-none focus:border-violet-500 transition">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-white/70 mb-1.5">Mot de passe</label>
+          <input type="password" required placeholder="8 caractères minimum" class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white placeholder-white/30 focus:outline-none focus:border-violet-500 transition">
+        </div>
+        <button type="submit" class="w-full bg-violet-600 hover:bg-violet-500 text-white font-semibold py-2.5 rounded-xl transition shadow-lg shadow-violet-500/20">
+          Créer mon compte →
+        </button>
+        <p class="text-center text-white/40 text-xs">En créant un compte, vous acceptez nos <a href="#" class="underline">CGU</a></p>
+      </form>
+    </div>
+
+    <p class="text-center text-white/30 text-xs mt-6">
+      <a href="index.html" class="hover:text-white/50 transition">← Retour à l'accueil</a>
+    </p>
+  </div>
+
+  <script>
+    function showTab(tab) {
+      const isLogin = tab === 'login';
+      document.getElementById('form-login').classList.toggle('hidden', !isLogin);
+      document.getElementById('form-signup').classList.toggle('hidden', isLogin);
+      document.getElementById('tab-login').className = isLogin 
+        ? 'flex-1 py-2 text-sm font-medium rounded-lg bg-white/10 text-white transition'
+        : 'flex-1 py-2 text-sm font-medium text-white/50 transition hover:text-white';
+      document.getElementById('tab-signup').className = !isLogin
+        ? 'flex-1 py-2 text-sm font-medium rounded-lg bg-white/10 text-white transition'
+        : 'flex-1 py-2 text-sm font-medium text-white/50 transition hover:text-white';
+    }
+    function handleLogin(e) {
+      e.preventDefault();
+      window.location.href = 'app.html';
+    }
+    function handleSignup(e) {
+      e.preventDefault();
+      window.location.href = 'app.html';
+    }
+  </script>
+</body>
+</html>
