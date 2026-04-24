@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fidelyoo — Cartes de fidélité digitales pour commerçants</title>
+  <meta name="description" content="Fidelyoo — Cartes de fidélité digitales pour commerçants. Apple Wallet & Google Wallet, sans app.">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="tailwind.config.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', sans-serif; background: #0f0f13; color: #f0ede8; }
+    .gradient-text { background: linear-gradient(135deg, #a78bfa, #38bdf8); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .card-glow { box-shadow: 0 0 40px rgba(167, 139, 250, 0.15); }
+  </style>
+</head>
+<body class="antialiased">
+
+  <!-- Nav -->
+  <nav class="fixed top-0 left-0 right-0 z-50 border-b border-white/5 bg-[#0f0f13]/90 backdrop-blur-md">
+    <div class="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+      <div class="text-xl font-bold gradient-text">Fidelyoo</div>
+      <div class="hidden md:flex items-center gap-8 text-sm text-white/60">
+        <a href="#features" class="hover:text-white transition">Fonctionnalités</a>
+        <a href="#pricing" class="hover:text-white transition">Tarifs</a>
+        <a href="#faq" class="hover:text-white transition">FAQ</a>
+      </div>
+      <a href="login.html" class="bg-violet-600 hover:bg-violet-500 text-white text-sm font-medium px-4 py-2 rounded-lg transition">Se connecter</a>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <section class="min-h-screen flex items-center justify-center px-6 pt-24">
+    <div class="max-w-3xl mx-auto text-center">
+      <div class="inline-flex items-center gap-2 bg-violet-500/10 text-violet-300 text-xs font-medium px-3 py-1.5 rounded-full border border-violet-500/20 mb-8">
+        <span class="w-1.5 h-1.5 rounded-full bg-violet-400 animate-pulse"></span>
+        Nouveau — Intégration Apple Wallet & Google Wallet
+      </div>
+      <h1 class="text-5xl md:text-6xl font-extrabold leading-tight mb-6">
+        La carte de fidélité<br>
+        <span class="gradient-text">dans le téléphone</span>
+      </h1>
+      <p class="text-lg text-white/60 mb-10 max-w-xl mx-auto">
+        Créez votre programme de fidélité digital en 5 minutes. Vos clients scannent, accumulent des points et reçoivent des notifications. Zéro app à télécharger.
+      </p>
+      <div class="flex flex-col sm:flex-row gap-4 justify-center">
+        <a href="login.html" class="bg-violet-600 hover:bg-violet-500 text-white font-semibold px-8 py-3 rounded-xl transition shadow-lg shadow-violet-500/20">
+          Démarrer gratuitement →
+        </a>
+        <a href="#features" class="border border-white/10 hover:border-white/30 text-white/80 hover:text-white font-medium px-8 py-3 rounded-xl transition">
+          Voir comment ça marche
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features -->
+  <section id="features" class="py-24 px-6">
+    <div class="max-w-6xl mx-auto">
+      <div class="text-center mb-16">
+        <h2 class="text-3xl font-bold mb-4">Tout ce qu'il faut pour fidéliser</h2>
+        <p class="text-white/50 max-w-xl mx-auto">Un outil pensé pour les commerçants indépendants. Simple, rapide, efficace.</p>
+      </div>
+      <div class="grid md:grid-cols-3 gap-6">
+        <div class="bg-white/5 border border-white/8 rounded-2xl p-6 card-glow">
+          <div class="w-10 h-10 bg-violet-500/20 rounded-xl flex items-center justify-center mb-4">
+            <svg class="w-5 h-5 text-violet-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"/></svg>
+          </div>
+          <h3 class="font-semibold text-white mb-2">QR Code & Scan</h3>
+          <p class="text-white/50 text-sm">Vos clients scannent leur QR code en caisse. Rapide, sans friction.</p>
+        </div>
+        <div class="bg-white/5 border border-white/8 rounded-2xl p-6">
+          <div class="w-10 h-10 bg-sky-500/20 rounded-xl flex items-center justify-center mb-4">
+            <svg class="w-5 h-5 text-sky-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
+          </div>
+          <h3 class="font-semibold text-white mb-2">Apple & Google Wallet</h3>
+          <p class="text-white/50 text-sm">La carte se glisse dans le portefeuille natif du téléphone. Aucune app requise.</p>
+        </div>
+        <div class="bg-white/5 border border-white/8 rounded-2xl p-6">
+          <div class="w-10 h-10 bg-emerald-500/20 rounded-xl flex items-center justify-center mb-4">
+            <svg class="w-5 h-5 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+          </div>
+          <h3 class="font-semibold text-white mb-2">Push Notifications</h3>
+          <p class="text-white/50 text-sm">Envoyez des offres directement sur l'écran verrouillé de vos clients.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Pricing -->
+  <section id="pricing" class="py-24 px-6">
+    <div class="max-w-4xl mx-auto text-center">
+      <h2 class="text-3xl font-bold mb-4">Tarifs simples</h2>
+      <p class="text-white/50 mb-12">Commencez gratuitement. Évoluez selon votre croissance.</p>
+      <div class="grid md:grid-cols-2 gap-6">
+        <div class="bg-white/5 border border-white/10 rounded-2xl p-8 text-left">
+          <div class="text-white/60 text-sm font-medium mb-2">Starter</div>
+          <div class="text-4xl font-bold mb-1">Gratuit</div>
+          <p class="text-white/40 text-sm mb-6">Pour tester et démarrer</p>
+          <ul class="space-y-3 text-sm text-white/70 mb-8">
+            <li class="flex items-center gap-2"><span class="text-emerald-400">✓</span> Jusqu'à 50 clients</li>
+            <li class="flex items-center gap-2"><span class="text-emerald-400">✓</span> 1 carte de fidélité</li>
+            <li class="flex items-center gap-2"><span class="text-emerald-400">✓</span> QR code scan</li>
+          </ul>
+          <a href="login.html" class="block text-center border border-white/15 hover:border-white/30 text-white py-2.5 rounded-xl text-sm font-medium transition">Démarrer</a>
+        </div>
+        <div class="bg-violet-600 rounded-2xl p-8 text-left relative overflow-hidden">
+          <div class="absolute top-4 right-4 bg-white/20 text-white text-xs font-bold px-2.5 py-1 rounded-full">Recommandé</div>
+          <div class="text-violet-200 text-sm font-medium mb-2">Pro</div>
+          <div class="text-4xl font-bold mb-1">29€<span class="text-xl font-normal text-violet-200">/mois</span></div>
+          <p class="text-violet-200 text-sm mb-6">Pour les commerçants actifs</p>
+          <ul class="space-y-3 text-sm text-white/90 mb-8">
+            <li class="flex items-center gap-2"><span class="text-white">✓</span> Clients illimités</li>
+            <li class="flex items-center gap-2"><span class="text-white">✓</span> Apple & Google Wallet</li>
+            <li class="flex items-center gap-2"><span class="text-white">✓</span> Push notifications</li>
+            <li class="flex items-center gap-2"><span class="text-white">✓</span> Analytics avancés</li>
+          </ul>
+          <a href="login.html" class="block text-center bg-white text-violet-700 py-2.5 rounded-xl text-sm font-bold transition hover:bg-violet-50">Essayer 14 jours gratuits</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section id="faq" class="py-24 px-6">
+    <div class="max-w-2xl mx-auto">
+      <h2 class="text-3xl font-bold text-center mb-12">Questions fréquentes</h2>
+      <div class="space-y-4">
+        <details class="bg-white/5 border border-white/8 rounded-xl p-5 group">
+          <summary class="font-medium cursor-pointer flex items-center justify-between">
+            Mes clients doivent-ils télécharger une app ?
+            <span class="text-white/40 group-open:rotate-180 transition-transform">↓</span>
+          </summary>
+          <p class="text-white/50 text-sm mt-3">Non. La carte s'ajoute directement dans Apple Wallet ou Google Wallet, déjà présents sur tous les smartphones.</p>
+        </details>
+        <details class="bg-white/5 border border-white/8 rounded-xl p-5 group">
+          <summary class="font-medium cursor-pointer flex items-center justify-between">
+            Comment fonctionne le scan en caisse ?
+            <span class="text-white/40 group-open:rotate-180 transition-transform">↓</span>
+          </summary>
+          <p class="text-white/50 text-sm mt-3">Vous ouvrez l'interface caisse sur votre téléphone ou tablette, et vos clients présentent leur QR code. Validation en 1 seconde.</p>
+        </details>
+        <details class="bg-white/5 border border-white/8 rounded-xl p-5 group">
+          <summary class="font-medium cursor-pointer flex items-center justify-between">
+            Puis-je personnaliser l'apparence de la carte ?
+            <span class="text-white/40 group-open:rotate-180 transition-transform">↓</span>
+          </summary>
+          <p class="text-white/50 text-sm mt-3">Oui, l'éditeur de carte vous permet de choisir couleurs, logo, nom et type de récompense (tampons, points, cashback).</p>
+        </details>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="border-t border-white/5 py-8 px-6 text-center text-white/30 text-sm">
+    <div class="gradient-text font-bold text-base mb-2">Fidelyoo</div>
+    © 2026 Fidelyoo. Tous droits réservés. · <a href="mailto:hello@fidelyoo.fr" class="hover:text-white/60">hello@fidelyoo.fr</a>
+  </footer>
+
+</body>
+</html>
