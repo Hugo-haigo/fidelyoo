@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fiche Client — Fidelyoo</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>body{font-family:'Inter',sans-serif;background:#0f0f13;color:#f0ede8;}</style>
+</head>
+<body class="antialiased">
+  <header class="border-b border-white/8 px-6 py-4 flex items-center gap-4">
+    <a href="app.html" class="text-white/40 hover:text-white text-sm transition">← Clients</a>
+    <span class="text-white/20">|</span>
+    <span class="font-semibold">Fiche client</span>
+  </header>
+
+  <div class="max-w-4xl mx-auto p-8">
+    <!-- Client Header -->
+    <div class="flex items-center gap-6 mb-8">
+      <div class="w-20 h-20 bg-violet-500/20 rounded-2xl flex items-center justify-center text-3xl">👤</div>
+      <div class="flex-1">
+        <h1 class="text-2xl font-bold">Marie Dupont</h1>
+        <p class="text-white/50">marie.dupont@email.com · +33 6 12 34 56 78</p>
+        <p class="text-white/30 text-sm mt-1">Client depuis le 12 janvier 2025</p>
+      </div>
+      <div class="flex gap-3">
+        <button class="border border-white/10 hover:border-white/25 text-white/60 hover:text-white text-sm px-4 py-2 rounded-lg transition">Envoyer un message</button>
+        <button onclick="addManualStamp()" class="bg-violet-600 hover:bg-violet-500 text-white text-sm px-4 py-2 rounded-lg transition">+ Tampon manuel</button>
+      </div>
+    </div>
+
+    <div class="grid md:grid-cols-3 gap-6">
+      <!-- Stats -->
+      <div class="space-y-4">
+        <div class="bg-white/5 border border-white/8 rounded-xl p-5">
+          <div class="text-white/40 text-xs mb-1">Visites totales</div>
+          <div class="text-2xl font-bold">47</div>
+        </div>
+        <div class="bg-white/5 border border-white/8 rounded-xl p-5">
+          <div class="text-white/40 text-xs mb-1">Récompenses obtenues</div>
+          <div class="text-2xl font-bold">4</div>
+        </div>
+        <div class="bg-white/5 border border-white/8 rounded-xl p-5">
+          <div class="text-white/40 text-xs mb-1">Dernière visite</div>
+          <div class="text-lg font-semibold">Aujourd'hui</div>
+        </div>
+      </div>
+
+      <!-- Loyalty Card -->
+      <div class="md:col-span-2">
+        <div class="bg-white/5 border border-white/8 rounded-xl p-6 mb-4">
+          <div class="flex items-center justify-between mb-4">
+            <h2 class="font-semibold text-sm">Carte de fidélité actuelle</h2>
+            <span class="text-emerald-400 text-xs font-medium">Actif</span>
+          </div>
+          <div class="bg-gradient-to-br from-violet-600 to-indigo-600 rounded-2xl p-5 text-white mb-4">
+            <div class="text-sm font-medium mb-4 opacity-80">Ma Boulangerie — Carte tampons</div>
+            <div class="flex flex-wrap gap-2 mb-4" id="stamp-grid"></div>
+            <div class="flex justify-between text-sm">
+              <span class="opacity-70">Récompense : 1 café offert</span>
+              <span id="stamp-text" class="font-semibold">8/10</span>
+            </div>
+          </div>
+          <p class="text-white/40 text-xs">2 tampons restants avant la prochaine récompense</p>
+        </div>
+
+        <!-- History -->
+        <div class="bg-white/5 border border-white/8 rounded-xl">
+          <div class="p-4 border-b border-white/8">
+            <h2 class="font-semibold text-sm">Historique des visites</h2>
+          </div>
+          <div class="divide-y divide-white/5">
+            <div class="flex items-center justify-between p-4">
+              <div>
+                <div class="text-sm font-medium">Visite + tampon</div>
+                <div class="text-white/40 text-xs">Aujourd'hui à 14:23</div>
+              </div>
+              <span class="bg-emerald-500/20 text-emerald-400 text-xs px-2 py-0.5 rounded-full">+1 tampon</span>
+            </div>
+            <div class="flex items-center justify-between p-4">
+              <div>
+                <div class="text-sm font-medium">Visite + tampon</div>
+                <div class="text-white/40 text-xs">Hier à 09:15</div>
+              </div>
+              <span class="bg-emerald-500/20 text-emerald-400 text-xs px-2 py-0.5 rounded-full">+1 tampon</span>
+            </div>
+            <div class="flex items-center justify-between p-4">
+              <div>
+                <div class="text-sm font-medium">Récompense utilisée</div>
+                <div class="text-white/40 text-xs">Il y a 3 jours</div>
+              </div>
+              <span class="bg-violet-500/20 text-violet-300 text-xs px-2 py-0.5 rounded-full">🎁 Café offert</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function renderStamps(count, total) {
+      const grid = document.getElementById('stamp-grid');
+      grid.innerHTML = '';
+      for (let i = 0; i < total; i++) {
+        const span = document.createElement('span');
+        span.textContent = i < count ? '🟣' : '⚪';
+        span.className = 'text-xl';
+        grid.appendChild(span);
+      }
+      document.getElementById('stamp-text').textContent = count + '/' + total;
+    }
+    
+    function addManualStamp() {
+      alert('Tampon ajouté manuellement à Marie Dupont');
+    }
+    
+    renderStamps(8, 10);
+  </script>
+</body>
+</html>
