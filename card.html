@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter+Tight:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdn.tailwindcss.com"></script>
-<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
 <style>
   body { font-family: 'Inter Tight', system-ui, sans-serif; background: #FAFAF7; color: #0E0E10; }
   .font-serif { font-family: 'Instrument Serif', 'Times New Roman', serif; }
@@ -119,7 +119,7 @@
     buildStampGrid('liveStampGrid', Math.min(card.stamps_required, 10), Math.min(filled, 10));
     document.getElementById('liveStampText').textContent = filled + ' / ' + card.stamps_required + ' tampons';
     document.getElementById('rewardStatus').textContent = remaining === 0 ? 'Recompense disponible !' : 'Plus que ' + remaining + ' tampon(s) avant : ' + card.reward_description;
-    QRCode.toCanvas(document.getElementById('qrCanvas'), customer.qr_code, { width: 200, margin: 1 }, () => {});
+    try { const qr = qrcode(0, 'M'); qr.addData(customer.qr_code); qr.make(); const canvas = document.getElementById('qrCanvas'); const moduleSize = 6; const size = qr.getModuleCount() * moduleSize; canvas.width = size; canvas.height = size; const ctx = canvas.getContext('2d'); ctx.fillStyle = 'white'; ctx.fillRect(0,0,size,size); ctx.fillStyle = 'black'; for (let r = 0; r < qr.getModuleCount(); r++) for (let c = 0; c < qr.getModuleCount(); c++) if (qr.isDark(r,c)) ctx.fillRect(c*moduleSize, r*moduleSize, moduleSize, moduleSize); } catch(e) { console.error('QR error', e); }
     show('cardView');
   }
   document.getElementById('signupForm')?.addEventListener('submit', async (e) => {
