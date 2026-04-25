@@ -158,17 +158,17 @@
             <span class="absolute left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 bg-paper px-3 font-mono text-[10px] tracking-[0.18em] text-mute uppercase">Ou</span>
           </div>
 
-          <form class="space-y-4 reveal d-2" onsubmit="event.preventDefault(); location.href='app.html';">
+          <form id="authForm" class="space-y-4 reveal d-2">
             <div>
               <label class="font-mono text-[10.5px] tracking-wider text-mute uppercase block mb-2">Email</label>
-              <input type="email" class="inp" placeholder="hugo@cafebloom.fr" autocomplete="email"/>
+              <input id="authEmail" type="email" class="inp" placeholder="hugo@cafebloom.fr" autocomplete="email" required/>
             </div>
             <div>
               <div class="flex items-center justify-between mb-2">
                 <label class="font-mono text-[10.5px] tracking-wider text-mute uppercase">Mot de passe</label>
                 <a href="#" class="text-[11.5px] text-ink underline underline-offset-2 hover:no-underline">Oublié ?</a>
               </div>
-              <input type="password" class="inp" placeholder="••••••••••••" autocomplete="current-password"/>
+              <input id="authPassword" type="password" class="inp" placeholder="••••••••••••" autocomplete="current-password" required minlength="6"/>
             </div>
 
             <label class="flex items-center gap-2.5 text-[13px] text-mute cursor-pointer select-none">
@@ -550,5 +550,65 @@
   /* Then every 7 s */
   setInterval(showPush, 7000);
 </script>
+
+
+  <!-- Supabase auth -->
+  <div id="authError" style="display:none;margin-top:14px;padding:10px 14px;border-radius:8px;background:#fee2e2;color:#b91c1c;font-size:13px;"></div>
+  <script type="module">
+    import { supabase, slugify } from './js/supabase-client.js';
+
+    // Redirect if already logged in
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session) { window.location.href = 'app.html'; }
+
+    const form = document.getElementById('authForm');
+    const errorBox = document.getElementById('authError');
+    function showError(msg) { errorBox.textContent = msg; errorBox.style.display = 'block'; }
+    function hideError() { errorBox.style.display = 'none'; }
+
+    function getMode() {
+      const active = document.querySelector('.auth-tab.active');
+      return active ? active.dataset.mode : 'signin';
+    }
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      hideError();
+      const email = document.getElementById('authEmail').value.trim();
+      const password = document.getElementById('authPassword').value;
+      const mode = getMode();
+      const submitBtn = form.querySelector('button[type="submit"]');
+      const originalLabel = submitBtn.innerHTML;
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = mode === 'signup' ? 'Création du compte...' : 'Connexion...';
+      try {
+        if (mode === 'signup') {
+          const { data, error } = await supabase.auth.signUp({ email, password });
+          if (error) throw error;
+          if (!data.user) throw new Error('Inscription impossible');
+          // Create merchant row
+          const baseSlug = slugify(email.split('@')[0]) || 'commerce';
+          const slug = baseSlug + '-' + Math.random().toString(36).substring(2, 6);
+          const { error: mErr } = await supabase.from('merchants').insert({
+            user_id: data.user.id,
+            business_name: email.split('@')[0],
+            slug,
+            email
+          });
+          if (mErr) throw mErr;
+          window.location.href = 'app.html';
+        } else {
+          const { error } = await supabase.auth.signInWithPassword({ email, password });
+          if (error) throw error;
+          window.location.href = 'app.html';
+        }
+      } catch (err) {
+        console.error(err);
+        showError(err.message || 'Erreur inconnue');
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalLabel;
+      }
+    });
+  </script>
 </body>
 </html>
