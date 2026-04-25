@@ -729,5 +729,31 @@
   }, { threshold: 0.1 });
   document.querySelectorAll('.reveal').forEach(el => io.observe(el));
 </script>
+
+  <!-- Supabase auth guard + data -->
+  <button id="logoutBtn" style="position:fixed;top:16px;right:16px;z-index:9999;padding:8px 14px;border-radius:8px;background:#0E0E10;color:white;font-size:13px;font-weight:500;cursor:pointer;border:none;font-family:'Inter Tight',system-ui,sans-serif;">Se déconnecter</button>
+  <div id="userBadge" style="position:fixed;top:16px;right:160px;z-index:9999;padding:8px 14px;border-radius:8px;background:white;color:#0E0E10;font-size:13px;font-weight:500;font-family:'Inter Tight',system-ui,sans-serif;border:1px solid #e5e7eb;display:none;"></div>
+  <script type="module">
+    import { supabase, getCurrentMerchant } from './js/supabase-client.js';
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) { window.location.href = 'login.html'; }
+    const merchant = await getCurrentMerchant();
+    if (merchant) {
+      const badge = document.getElementById('userBadge');
+      badge.textContent = merchant.business_name || merchant.email;
+      badge.style.display = 'block';
+      const { count: customersCount } = await supabase.from('customers').select('*', { count: 'exact', head: true }).eq('merchant_id', merchant.id);
+      const { count: stampsCount } = await supabase.from('stamps').select('*', { count: 'exact', head: true }).eq('merchant_id', merchant.id);
+      const { count: rewardsCount } = await supabase.from('rewards').select('*', { count: 'exact', head: true }).eq('merchant_id', merchant.id);
+      console.log('[Fidelyoo] Merchant:', merchant);
+      console.log('[Fidelyoo] Stats:', { customersCount, stampsCount, rewardsCount });
+      window.__fidelyooMerchant = merchant;
+      window.__fidelyooStats = { customersCount, stampsCount, rewardsCount };
+    }
+    document.getElementById('logoutBtn').addEventListener('click', async () => {
+      await supabase.auth.signOut();
+      window.location.href = 'login.html';
+    });
+  </script>
 </body>
 </html>
