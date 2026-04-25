@@ -400,5 +400,98 @@
     showState('stateScanning');
   }
 </script>
+
+  <div id="scanOverlay" style="position:fixed;bottom:20px;left:20px;right:20px;z-index:10000;background:#FAFAF7;color:#0E0E10;border-radius:14px;padding:18px;box-shadow:0 12px 30px rgba(0,0,0,0.6);font-family:'Inter Tight',system-ui,sans-serif;max-width:480px;margin:0 auto;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+      <div style="font-weight:600;font-size:14px;">Scanner réel</div>
+      <button id="logoutBtn2" style="background:transparent;border:1px solid #ddd;color:#0E0E10;padding:5px 10px;border-radius:6px;font-size:12px;cursor:pointer;">Déconnexion</button>
+    </div>
+    <div id="merchantBadge" style="font-size:12px;color:#666;margin-bottom:10px;"></div>
+    <video id="scanVideo" playsinline style="display:none;width:100%;border-radius:10px;background:#000;max-height:240px;object-fit:cover;"></video>
+    <div id="scanResult" style="display:none;padding:10px;border-radius:8px;background:#16a34a;color:white;font-size:13px;margin-top:8px;"></div>
+    <div id="scanError" style="display:none;padding:10px;border-radius:8px;background:#fee2e2;color:#b91c1c;font-size:13px;margin-top:8px;"></div>
+    <div style="display:flex;gap:8px;margin-top:10px;">
+      <button id="startCamBtn" style="flex:1;padding:10px;background:#0E0E10;color:white;border:none;border-radius:8px;font-weight:500;font-size:13px;cursor:pointer;">Démarrer caméra</button>
+      <button id="stopCamBtn" style="display:none;flex:1;padding:10px;background:#b91c1c;color:white;border:none;border-radius:8px;font-weight:500;font-size:13px;cursor:pointer;">Arrêter</button>
+    </div>
+    <div style="margin-top:10px;display:flex;gap:6px;">
+      <input id="manualQr" type="text" placeholder="Ou saisir code manuellement" style="flex:1;padding:9px 10px;border:1px solid #ddd;border-radius:8px;font-size:13px;"/>
+      <button id="manualBtn" style="padding:9px 14px;background:#0E0E10;color:white;border:none;border-radius:8px;font-weight:500;font-size:13px;cursor:pointer;">+1</button>
+    </div>
+  </div>
+  <script type="module">
+    import { supabase, getCurrentMerchant } from './js/supabase-client.js';
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) { window.location.href = 'login.html'; }
+    const merchant = await getCurrentMerchant();
+    if (!merchant) { window.location.href = 'login.html'; }
+    document.getElementById('merchantBadge').textContent = merchant.business_name;
+    document.getElementById('logoutBtn2').addEventListener('click', async () => { await supabase.auth.signOut(); window.location.href = 'login.html'; });
+    const video = document.getElementById('scanVideo');
+    const resultEl = document.getElementById('scanResult');
+    const errorEl = document.getElementById('scanError');
+    let stream = null;
+    let scanning = false;
+    let detector = null;
+    let lastCode = null;
+    let lastCodeAt = 0;
+    function showResult(msg) { resultEl.textContent = msg; resultEl.style.display = 'block'; setTimeout(() => resultEl.style.display = 'none', 4000); }
+    function showError(msg) { errorEl.textContent = msg; errorEl.style.display = 'block'; setTimeout(() => errorEl.style.display = 'none', 4000); }
+    async function processCode(code) {
+      const now = Date.now();
+      if (lastCode === code && now - lastCodeAt < 5000) return;
+      lastCode = code;
+      lastCodeAt = now;
+      try {
+        const { data: customer, error } = await supabase.from('customers').select('*').eq('qr_code', code).eq('merchant_id', merchant.id).maybeSingle();
+        if (error) throw error;
+        if (!customer) { showError('Carte inconnue'); return; }
+        const { error: stampErr } = await supabase.from('stamps').insert({ merchant_id: merchant.id, customer_id: customer.id, stamps_count: 1 });
+        if (stampErr) throw stampErr;
+        showResult('+1 tampon: ' + customer.first_name + ' ' + customer.last_name);
+      } catch (err) { console.error(err); showError('Erreur: ' + err.message); }
+    }
+    async function startScan() {
+      try {
+        if ('BarcodeDetector' in window) {
+          const formats = await BarcodeDetector.getSupportedFormats();
+          detector = new BarcodeDetector({ formats: formats.includes('qr_code') ? ['qr_code'] : formats });
+        }
+        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+        video.srcObject = stream;
+        video.style.display = 'block';
+        document.getElementById('startCamBtn').style.display = 'none';
+        document.getElementById('stopCamBtn').style.display = 'block';
+        await video.play();
+        scanning = true;
+        scanLoop();
+      } catch (err) { showError('Camera: ' + err.message); }
+    }
+    function stopScan() {
+      scanning = false;
+      if (stream) stream.getTracks().forEach(t => t.stop());
+      video.style.display = 'none';
+      document.getElementById('startCamBtn').style.display = 'block';
+      document.getElementById('stopCamBtn').style.display = 'none';
+    }
+    async function scanLoop() {
+      while (scanning) {
+        if (detector) {
+          try {
+            const codes = await detector.detect(video);
+            if (codes && codes.length) await processCode(codes[0].rawValue);
+          } catch(e) {}
+        }
+        await new Promise(r => setTimeout(r, 400));
+      }
+    }
+    document.getElementById('startCamBtn').addEventListener('click', startScan);
+    document.getElementById('stopCamBtn').addEventListener('click', stopScan);
+    document.getElementById('manualBtn').addEventListener('click', async () => {
+      const code = document.getElementById('manualQr').value.trim();
+      if (code) { await processCode(code); document.getElementById('manualQr').value = ''; }
+    });
+    document.getElementById('manualQr').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); document.getElementById('manualBtn').click(); } });
+  </script>
 </body>
 </html>
