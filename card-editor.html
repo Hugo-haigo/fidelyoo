@@ -847,54 +847,164 @@
 
   <div id="cardStatus" style="position:fixed;bottom:16px;right:16px;z-index:9999;padding:10px 14px;border-radius:8px;background:#0E0E10;color:white;font-size:13px;font-weight:500;font-family:system-ui;display:none;"></div>
   <script type="module">
-    import { supabase, getCurrentMerchant } from './js/supabase-client.js';
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) { window.location.href = 'login.html'; }
-    const merchant = await getCurrentMerchant();
-    if (!merchant) { window.location.href = 'login.html'; }
-    window.__merchant = merchant;
-    const { data: existingCard } = await supabase.from('cards').select('*').eq('merchant_id', merchant.id).order('created_at', { ascending: false }).limit(1).maybeSingle();
-    if (existingCard) {
-      window.__cardId = existingCard.id;
-      const n = document.getElementById('cardName');
-      const r = document.getElementById('rewardDescription');
-      const s = document.getElementById('stampsRequired');
-      if (n) n.value = existingCard.name || n.value;
-      if (r) r.value = existingCard.reward_description || r.value;
-      if (s) s.value = existingCard.stamps_required || s.value;
-      console.log('[Fidelyoo] Existing card loaded:', existingCard);
+  import { supabase, getCurrentMerchant } from './js/supabase-client.js';
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) { window.location.href = 'login.html'; }
+  const merchant = await getCurrentMerchant();
+  if (!merchant) { window.location.href = 'login.html'; }
+  window.__merchant = merchant;
+
+  const state = {
+    cardId: null,
+    name: 'CAFÉ BLOOM',
+    reward_description: 'Un café offert',
+    stamps_required: 10,
+    bg_color: '#0E0E10',
+    accent_color: '#9A2232',
+    text_color: '#FFFFFF',
+    logo_url: null,
+    font_family: 'Inter Tight'
+  };
+
+  const { data: existingCard } = await supabase.from('cards').select('*').eq('merchant_id', merchant.id).order('created_at', { ascending: false }).limit(1).maybeSingle();
+  if (existingCard) {
+    state.cardId = existingCard.id;
+    state.name = existingCard.name || state.name;
+    state.reward_description = existingCard.reward_description || state.reward_description;
+    state.stamps_required = existingCard.stamps_required || state.stamps_required;
+    state.bg_color = existingCard.bg_color || state.bg_color;
+    state.accent_color = existingCard.accent_color || state.accent_color;
+    state.text_color = existingCard.text_color || state.text_color;
+    state.logo_url = existingCard.logo_url || null;
+    state.font_family = existingCard.font_family || state.font_family;
+  }
+
+  const $ = (id) => document.getElementById(id);
+  function getContrastText(hex) {
+    const h = (hex || '#000').replace('#','');
+    const r = parseInt(h.substring(0,2),16) || 0;
+    const g = parseInt(h.substring(2,4),16) || 0;
+    const b = parseInt(h.substring(4,6),16) || 0;
+    const luma = (0.299*r + 0.587*g + 0.114*b) / 255;
+    return luma > 0.6 ? '#0E0E10' : '#FFFFFF';
+  }
+
+  function applyToInputs() {
+    if ($('cardName')) $('cardName').value = state.name;
+    if ($('rewardDescription')) $('rewardDescription').value = state.reward_description;
+    if ($('stampsRequired')) $('stampsRequired').value = state.stamps_required;
+  }
+
+  function updatePreview() {
+    const txt = state.text_color || getContrastText(state.bg_color);
+    document.documentElement.style.setProperty('--card-bg', state.bg_color);
+    document.documentElement.style.setProperty('--card-accent', state.accent_color);
+    document.documentElement.style.setProperty('--card-text', txt);
+    const tilt = $('cardTilt');
+    if (tilt) {
+      tilt.style.background = state.bg_color;
+      tilt.style.color = txt;
     }
-    function showStatus(msg, isError = false) {
-      const el = document.getElementById('cardStatus');
-      el.textContent = msg;
-      el.style.background = isError ? '#b91c1c' : '#16a34a';
-      el.style.display = 'block';
-      setTimeout(() => { el.style.display = 'none'; }, 5000);
-    }
-    document.getElementById('publishBtn').addEventListener('click', async (e) => {
-      e.preventDefault();
-      const name = document.getElementById('cardName').value.trim();
-      const reward = document.getElementById('rewardDescription').value.trim();
-      const stamps = parseInt(document.getElementById('stampsRequired').value, 10) || 10;
-      if (!name || !reward) { showStatus('Nom et récompense requis', true); return; }
-      const payload = { merchant_id: merchant.id, name, reward_description: reward, stamps_required: stamps, is_published: true };
-      try {
-        let result;
-        if (window.__cardId) {
-          result = await supabase.from('cards').update(payload).eq('id', window.__cardId).select().single();
-        } else {
-          result = await supabase.from('cards').insert(payload).select().single();
-        }
-        if (result.error) throw result.error;
-        window.__cardId = result.data.id;
-        const publicUrl = window.location.origin + '/fidelyoo/card.html?m=' + merchant.slug;
-        showStatus('Carte publiée: ' + publicUrl);
-        console.log('[Fidelyoo] Card saved:', result.data);
-      } catch (err) {
-        console.error(err);
-        showStatus('Erreur: ' + (err.message || 'inconnue'), true);
-      }
+    document.querySelectorAll('#cardTilt *').forEach(el => {
+      const cs = getComputedStyle(el);
+      if (cs.color && cs.color !== 'rgba(0, 0, 0, 0)') el.style.color = txt;
     });
-  </script>
+    document.querySelectorAll('.stamp.filled, .stamp-filled, [data-stamp="filled"]').forEach(el => {
+      el.style.background = state.accent_color;
+      el.style.borderColor = state.accent_color;
+    });
+    document.querySelectorAll('.text-ox, .bg-ox').forEach(el => {
+      if (el.classList.contains('bg-ox')) el.style.background = state.accent_color;
+      if (el.classList.contains('text-ox')) el.style.color = state.accent_color;
+    });
+    document.querySelectorAll('[data-preview="name"]').forEach(el => el.textContent = state.name);
+    document.querySelectorAll('[data-preview="reward"]').forEach(el => el.textContent = state.reward_description);
+  }
+
+  function wireSwatches() {
+    document.querySelectorAll('section').forEach(section => {
+      const label = section.querySelector('label.lbl');
+      if (!label) return;
+      const txt = label.textContent.trim().toLowerCase();
+      const isBg = txt.includes('couleur de fond');
+      const isAccent = txt.includes("couleur d'accent");
+      if (!isBg && !isAccent) return;
+      const swatches = section.querySelectorAll('.swatch');
+      swatches.forEach(sw => {
+        const style = sw.getAttribute('style') || '';
+        const m = style.match(/background\s*:\s*(#[0-9a-fA-F]{3,8})/);
+        if (!m) return;
+        const color = m[1];
+        sw.style.cursor = 'pointer';
+        sw.addEventListener('click', () => {
+          swatches.forEach(s => s.classList.remove('active'));
+          sw.classList.add('active');
+          if (isBg) { state.bg_color = color; state.text_color = getContrastText(color); }
+          else if (isAccent) { state.accent_color = color; }
+          updatePreview();
+        });
+        sw.classList.toggle('active',
+          (isBg && color.toLowerCase() === (state.bg_color || '').toLowerCase()) ||
+          (isAccent && color.toLowerCase() === (state.accent_color || '').toLowerCase())
+        );
+      });
+    });
+  }
+
+  function wireInputs() {
+    if ($('cardName')) $('cardName').addEventListener('input', e => { state.name = e.target.value; updatePreview(); });
+    if ($('rewardDescription')) $('rewardDescription').addEventListener('input', e => { state.reward_description = e.target.value; updatePreview(); });
+    if ($('stampsRequired')) $('stampsRequired').addEventListener('input', e => { state.stamps_required = parseInt(e.target.value, 10) || 10; });
+  }
+
+  function showStatus(msg, isError = false) {
+    let el = $('cardStatus');
+    if (!el) {
+      el = document.createElement('div');
+      el.id = 'cardStatus';
+      el.style.cssText = 'position:fixed;bottom:20px;right:20px;z-index:9999;padding:10px 14px;border-radius:8px;color:#fff;font-size:13px;font-weight:500;font-family:system-ui;display:none;';
+      document.body.appendChild(el);
+    }
+    el.textContent = msg;
+    el.style.background = isError ? '#b91c1c' : '#16a34a';
+    el.style.display = 'block';
+    setTimeout(() => { el.style.display = 'none'; }, 4000);
+  }
+
+  async function publish() {
+    if (!state.name || !state.reward_description) { showStatus('Nom et récompense requis', true); return; }
+    const payload = {
+      merchant_id: merchant.id,
+      name: state.name,
+      reward_description: state.reward_description,
+      stamps_required: state.stamps_required,
+      bg_color: state.bg_color,
+      accent_color: state.accent_color,
+      text_color: state.text_color,
+      logo_url: state.logo_url,
+      font_family: state.font_family,
+      is_published: true
+    };
+    try {
+      let result;
+      if (state.cardId) result = await supabase.from('cards').update(payload).eq('id', state.cardId).select().single();
+      else result = await supabase.from('cards').insert(payload).select().single();
+      if (result.error) throw result.error;
+      state.cardId = result.data.id;
+      const url = window.location.origin + '/fidelyoo/card.html?m=' + merchant.slug;
+      showStatus('Carte publiée — ' + url);
+    } catch (err) {
+      console.error(err);
+      showStatus('Erreur: ' + (err.message || 'inconnue'), true);
+    }
+  }
+
+  applyToInputs();
+  wireSwatches();
+  wireInputs();
+  updatePreview();
+  const pb = $('publishBtn');
+  if (pb) pb.addEventListener('click', e => { e.preventDefault(); publish(); });
+</script>
 </body>
 </html>
