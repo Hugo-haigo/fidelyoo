@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+<title>Fidelyoo — Ma carte de fidélité</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter+Tight:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+<style>
+  body { font-family: 'Inter Tight', system-ui, sans-serif; background: #FAFAF7; color: #0E0E10; }
+  .font-serif { font-family: 'Instrument Serif', 'Times New Roman', serif; }
+  .inp { width: 100%; padding: 12px 14px; border: 1px solid #e5e5e5; border-radius: 10px; font-size: 15px; background: white; }
+  .inp:focus { outline: none; border-color: #0E0E10; }
+  .lbl { display: block; font-size: 12px; font-weight: 500; color: #6b6b6b; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.05em; }
+  .stamp { width: 38px; height: 38px; border-radius: 50%; border: 2px dashed rgba(255,255,255,0.3); display: flex; align-items: center; justify-content: center; }
+  .stamp.filled { background: white; border-style: solid; border-color: white; }
+  .stamp.filled::after { content: "\2713"; color: #0E0E10; font-weight: 700; }
+</style>
+</head>
+<body class="min-h-screen">
+<div class="max-w-md mx-auto px-5 py-8">
+  <div id="loading" class="text-center py-20 text-gray-500">Chargement...</div>
+  <div id="errorBox" class="hidden bg-red-50 text-red-700 p-4 rounded-lg text-sm"></div>
+  <div id="signupView" class="hidden">
+    <div class="text-center mb-6">
+      <div class="text-xs uppercase tracking-widest text-gray-500 mb-2" id="merchantTag"></div>
+      <h1 class="font-serif text-4xl mb-2" id="cardTitle">Carte de fidelite</h1>
+      <p class="text-gray-600 text-sm" id="cardReward"></p>
+    </div>
+    <div class="rounded-2xl p-6 mb-6 text-white" style="background:linear-gradient(135deg,#0E0E10 0%,#2a2a30 100%);">
+      <div class="flex justify-between items-start mb-8">
+        <div>
+          <div class="text-xs opacity-60 uppercase tracking-widest" id="cardBrand">FIDELYOO</div>
+          <div class="text-lg font-medium mt-1" id="cardBrandName">--</div>
+        </div>
+        <div class="text-xs opacity-60">Carte digitale</div>
+      </div>
+      <div class="grid grid-cols-5 gap-2 mb-4" id="stampGrid"></div>
+      <div class="text-xs opacity-70 text-center" id="rewardText">--</div>
+    </div>
+    <form id="signupForm" class="space-y-4">
+      <div><label class="lbl">Prenom</label><input id="firstName" type="text" required class="inp" placeholder="Marie"/></div>
+      <div><label class="lbl">Nom</label><input id="lastName" type="text" required class="inp" placeholder="Dupont"/></div>
+      <div><label class="lbl">Email</label><input id="email" type="email" required class="inp" placeholder="marie@email.com"/></div>
+      <div><label class="lbl">Telephone (optionnel)</label><input id="phone" type="tel" class="inp" placeholder="06 12 34 56 78"/></div>
+      <button type="submit" id="submitBtn" class="w-full h-12 rounded-lg bg-black text-white font-medium hover:bg-gray-800 transition-colors">Activer ma carte</button>
+      <p class="text-xs text-gray-500 text-center">En activant, vous acceptez de recevoir des notifications liees a votre fidelite.</p>
+    </form>
+  </div>
+  <div id="cardView" class="hidden">
+    <div class="text-center mb-4">
+      <div class="text-xs uppercase tracking-widest text-gray-500 mb-2" id="cardViewMerchant"></div>
+      <h1 class="font-serif text-3xl">Bienvenue !</h1>
+      <p class="text-gray-600 text-sm mt-1" id="welcomeName"></p>
+    </div>
+    <div class="rounded-2xl p-6 mb-6 text-white" style="background:linear-gradient(135deg,#0E0E10 0%,#2a2a30 100%);">
+      <div class="flex justify-between items-start mb-6">
+        <div>
+          <div class="text-xs opacity-60 uppercase tracking-widest">FIDELYOO</div>
+          <div class="text-lg font-medium mt-1" id="cardViewBrand">--</div>
+        </div>
+        <div class="text-xs opacity-60" id="customerNumber"></div>
+      </div>
+      <div class="grid grid-cols-5 gap-2 mb-3" id="liveStampGrid"></div>
+      <div class="text-xs opacity-70 text-center mb-2" id="liveStampText">--</div>
+      <div class="bg-white p-3 rounded-xl mt-4 flex justify-center"><canvas id="qrCanvas"></canvas></div>
+      <div class="text-[10px] opacity-50 text-center mt-2 uppercase tracking-wider">Presentez ce QR au commercant</div>
+    </div>
+    <div class="text-center text-xs text-gray-500" id="rewardStatus"></div>
+  </div>
+</div>
+<script type="module">
+  import { supabase } from './js/supabase-client.js';
+  const params = new URLSearchParams(location.search);
+  const merchantSlug = params.get('m');
+  const customerQr = params.get('c');
+  function show(id) { ['loading','signupView','cardView','errorBox'].forEach(x => { const el = document.getElementById(x); if (el) el.classList.toggle('hidden', x !== id); }); }
+  function showError(msg) { const el = document.getElementById('errorBox'); el.textContent = msg; el.classList.remove('hidden'); }
+  function buildStampGrid(gridId, total, filled) { const grid = document.getElementById(gridId); grid.innerHTML = ''; for (let i = 0; i < total; i++) { const d = document.createElement('div'); d.className = 'stamp' + (i < filled ? ' filled' : ''); grid.appendChild(d); } }
+  if (!merchantSlug) { show('errorBox'); showError('Lien invalide. Code commercant manquant.'); }
+  else {
+    try {
+      const { data: merchant, error: mErr } = await supabase.from('merchants').select('*').eq('slug', merchantSlug).maybeSingle();
+      if (mErr) throw mErr;
+      if (!merchant) { showError('Commercant introuvable.'); show('errorBox'); throw new Error('no merchant'); }
+      const { data: card, error: cErr } = await supabase.from('cards').select('*').eq('merchant_id', merchant.id).eq('is_published', true).order('created_at', { ascending: false }).limit(1).maybeSingle();
+      if (cErr) throw cErr;
+      if (!card) { showError('Aucune carte publiee pour ce commercant.'); show('errorBox'); throw new Error('no card'); }
+      window.__merchant = merchant;
+      window.__card = card;
+      if (customerQr) {
+        const { data: customer } = await supabase.from('customers').select('*').eq('qr_code', customerQr).maybeSingle();
+        if (customer) { await renderCardView(merchant, card, customer); }
+        else { showError('Carte client introuvable.'); show('errorBox'); }
+      } else {
+        document.getElementById('merchantTag').textContent = merchant.business_name;
+        document.getElementById('cardBrand').textContent = (merchant.business_name||'').toUpperCase();
+        document.getElementById('cardBrandName').textContent = card.name;
+        document.getElementById('cardTitle').textContent = card.name;
+        document.getElementById('cardReward').textContent = card.reward_description;
+        document.getElementById('rewardText').textContent = 'Recompense : ' + card.reward_description;
+        buildStampGrid('stampGrid', Math.min(card.stamps_required, 10), 0);
+        show('signupView');
+      }
+    } catch (err) { console.error(err); if (!document.getElementById('errorBox').textContent) showError('Erreur: ' + err.message); show('errorBox'); }
+  }
+  async function renderCardView(merchant, card, customer) {
+    document.getElementById('cardViewMerchant').textContent = merchant.business_name;
+    document.getElementById('welcomeName').textContent = customer.first_name + ' ' + customer.last_name;
+    document.getElementById('cardViewBrand').textContent = card.name;
+    document.getElementById('customerNumber').textContent = '#' + customer.qr_code.substring(0, 6).toUpperCase();
+    const { data: stamps } = await supabase.from('stamps').select('stamps_count').eq('customer_id', customer.id);
+    const totalStamps = (stamps || []).reduce((s, x) => s + (x.stamps_count || 0), 0);
+    const filled = totalStamps % card.stamps_required;
+    const remaining = card.stamps_required - filled;
+    buildStampGrid('liveStampGrid', Math.min(card.stamps_required, 10), Math.min(filled, 10));
+    document.getElementById('liveStampText').textContent = filled + ' / ' + card.stamps_required + ' tampons';
+    document.getElementById('rewardStatus').textContent = remaining === 0 ? 'Recompense disponible !' : 'Plus que ' + remaining + ' tampon(s) avant : ' + card.reward_description;
+    QRCode.toCanvas(document.getElementById('qrCanvas'), customer.qr_code, { width: 200, margin: 1 }, () => {});
+    show('cardView');
+  }
+  document.getElementById('signupForm')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const merchant = window.__merchant;
+    const card = window.__card;
+    const submitBtn = document.getElementById('submitBtn');
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Activation...';
+    try {
+      const payload = { merchant_id: merchant.id, card_id: card.id, first_name: document.getElementById('firstName').value.trim(), last_name: document.getElementById('lastName').value.trim(), email: document.getElementById('email').value.trim(), phone: document.getElementById('phone').value.trim() || null };
+      const { data, error } = await supabase.from('customers').insert(payload).select().single();
+      if (error) {
+        if (error.code === '23505') {
+          const { data: existing } = await supabase.from('customers').select('*').eq('merchant_id', merchant.id).eq('email', payload.email).single();
+          if (existing) { location.href = location.pathname + '?m=' + merchant.slug + '&c=' + existing.qr_code; return; }
+        }
+        throw error;
+      }
+      location.href = location.pathname + '?m=' + merchant.slug + '&c=' + data.qr_code;
+    } catch (err) { console.error(err); showError(err.message || 'Erreur inconnue'); submitBtn.disabled = false; submitBtn.textContent = 'Activer ma carte'; }
+  });
+</script>
+</body>
+</html>
