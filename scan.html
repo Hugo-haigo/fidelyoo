@@ -1,0 +1,404 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Fidelyoo — Scanner en caisse</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter+Tight:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="tailwind.config.js"></script>
+<script>tailwind.config = window.fidelyooTailwindConfig;</script>
+<style>
+  html, body { height: 100%; }
+  body { font-family: 'Inter Tight', ui-sans-serif, system-ui, sans-serif; -webkit-font-smoothing: antialiased; color: #0E0E10; background: #0E0E10; }
+  .font-serif { font-family: 'Instrument Serif', 'Times New Roman', serif; letter-spacing: -0.02em; }
+  .font-display { font-family: 'Inter Tight', sans-serif; font-weight: 800; letter-spacing: -0.05em; }
+  .font-mono { font-family: 'JetBrains Mono', ui-monospace, monospace; letter-spacing: 0.02em; }
+  .eyebrow { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: #A29F97; }
+  .tabular-nums { font-variant-numeric: tabular-nums; }
+
+  /* Scanner viewfinder */
+  .scanner-frame {
+    position: relative;
+    width: 260px; height: 260px;
+    margin: 0 auto;
+  }
+  .scanner-frame::before, .scanner-frame::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 20px;
+  }
+  .scanner-frame::before {
+    border: 1.5px solid rgba(250,250,247,0.08);
+    background: rgba(250,250,247,0.03);
+  }
+  /* Corner marks */
+  .corner { position: absolute; width: 20px; height: 20px; }
+  .corner-tl { top: -1px; left: -1px; border-top: 2.5px solid #FAFAF7; border-left: 2.5px solid #FAFAF7; border-radius: 6px 0 0 0; }
+  .corner-tr { top: -1px; right: -1px; border-top: 2.5px solid #FAFAF7; border-right: 2.5px solid #FAFAF7; border-radius: 0 6px 0 0; }
+  .corner-bl { bottom: -1px; left: -1px; border-bottom: 2.5px solid #FAFAF7; border-left: 2.5px solid #FAFAF7; border-radius: 0 0 0 6px; }
+  .corner-br { bottom: -1px; right: -1px; border-bottom: 2.5px solid #FAFAF7; border-right: 2.5px solid #FAFAF7; border-radius: 0 0 6px 0; }
+
+  /* Scan line animation */
+  @keyframes scanLine {
+    0%   { top: 16px; opacity: 1; }
+    48%  { opacity: 1; }
+    50%  { top: calc(100% - 16px); opacity: 0.4; }
+    52%  { opacity: 1; }
+    100% { top: 16px; opacity: 1; }
+  }
+  .scan-line {
+    position: absolute; left: 16px; right: 16px; height: 2px;
+    background: linear-gradient(90deg, transparent, #9A2232, transparent);
+    border-radius: 9999px;
+    animation: scanLine 2.4s cubic-bezier(.45,.05,.55,.95) infinite;
+    filter: blur(0.5px);
+    box-shadow: 0 0 12px 2px rgba(154,34,50,0.5);
+  }
+
+  /* Success flash */
+  @keyframes successFlash {
+    0%   { opacity: 0; transform: scale(0.85); }
+    30%  { opacity: 1; transform: scale(1.04); }
+    100% { opacity: 1; transform: scale(1); }
+  }
+  .success-anim { animation: successFlash .5s cubic-bezier(.16,1,.3,1) both; }
+
+  /* Stamp fill */
+  @keyframes stampFill {
+    0%   { transform: scale(0) rotate(-15deg); opacity: 0; }
+    60%  { transform: scale(1.2) rotate(5deg); opacity: 1; }
+    100% { transform: scale(1) rotate(0); opacity: 1; }
+  }
+  .stamp-anim { animation: stampFill .5s cubic-bezier(.16,1,.3,1) both; }
+
+  /* Card slide-up */
+  @keyframes slideUp {
+    0%   { opacity: 0; transform: translateY(24px); }
+    100% { opacity: 1; transform: translateY(0); }
+  }
+  .slide-up { animation: slideUp .5s cubic-bezier(.16,1,.3,1) both; }
+
+  /* States */
+  .state { display: none; }
+  .state.active { display: flex; }
+
+  /* Number key */
+  .num-key { height: 60px; border-radius: 12px; font-size: 22px; font-weight: 600; color: #FAFAF7; background: rgba(250,250,247,0.07); border: 1px solid rgba(250,250,247,0.06); transition: background .12s; display: grid; place-items: center; cursor: pointer; user-select: none; }
+  .num-key:active { background: rgba(250,250,247,0.16); transform: scale(0.96); }
+</style>
+</head>
+<body>
+
+<div class="min-h-screen flex flex-col text-paper">
+
+  <!-- Top bar -->
+  <header class="flex items-center justify-between px-6 pt-6 pb-4">
+    <a href="app.html" class="flex items-center gap-2.5">
+      <span class="grid place-items-center w-7 h-7 rounded-md bg-paper">
+        <svg viewBox="0 0 100 100" class="w-5 h-5" aria-hidden>
+          <circle cx="34" cy="42" r="14" fill="none" stroke="#0E0E10" stroke-width="5"/>
+          <circle cx="34" cy="44" r="3.5" fill="#0E0E10"/>
+          <circle cx="66" cy="42" r="14" fill="none" stroke="#0E0E10" stroke-width="5"/>
+          <circle cx="66" cy="44" r="3.5" fill="#0E0E10"/>
+          <path d="M 26 70 Q 50 88 74 70" fill="none" stroke="#9A2232" stroke-width="5" stroke-linecap="round"/>
+        </svg>
+      </span>
+      <span class="font-semibold text-[16px] -tracking-[0.03em]">Caisse · Café Bloom</span>
+    </a>
+
+    <div class="flex items-center gap-3">
+      <div class="flex items-center gap-1.5 text-[12px] text-paper/50">
+        <span class="w-1.5 h-1.5 rounded-full bg-moss animate-pulse"></span>
+        En ligne
+      </div>
+      <button onclick="location.href='app.html'" class="h-8 px-3 rounded-lg border border-white/10 text-[12px] text-paper/70 hover:border-white/20 hover:text-paper transition-all">← Tableau de bord</button>
+    </div>
+  </header>
+
+  <!-- Mode selector -->
+  <div class="flex justify-center px-6 mt-2">
+    <div class="inline-flex p-1 bg-white/5 rounded-full border border-white/8">
+      <button class="mode-btn active px-5 h-9 rounded-full text-[13px] font-medium text-paper transition-all" data-mode="qr">Scanner QR</button>
+      <button class="mode-btn px-5 h-9 rounded-full text-[13px] font-medium text-paper/50 transition-all hover:text-paper/80" data-mode="manual">Code manuel</button>
+    </div>
+  </div>
+
+  <!-- ============================
+       STATE 0 : SCANNING
+  ============================= -->
+  <div id="stateScanning" class="state active flex-col flex-1 items-center justify-center px-6 py-10">
+    <div class="text-center mb-8">
+      <div class="eyebrow text-paper/40 mb-2">Scanner</div>
+      <p class="text-[15px] text-paper/70">Demandez au client d'afficher sa carte Wallet.</p>
+    </div>
+
+    <!-- QR mode -->
+    <div id="modeQR" class="w-full flex flex-col items-center">
+      <div class="scanner-frame">
+        <div class="corner corner-tl"></div>
+        <div class="corner corner-tr"></div>
+        <div class="corner corner-bl"></div>
+        <div class="corner corner-br"></div>
+        <div class="scan-line"></div>
+        <!-- Fake QR pattern in center (decorative) -->
+        <div class="absolute inset-8 grid grid-cols-7 grid-rows-7 gap-[2px] opacity-10">
+          <div class="bg-paper col-span-3 row-span-3 rounded-sm"></div>
+          <div class="bg-paper col-start-5 col-span-3 row-span-3 rounded-sm"></div>
+          <div class="bg-paper col-span-3 row-start-5 row-span-3 rounded-sm"></div>
+          <div class="bg-paper col-start-4 row-start-4 rounded-sm"></div>
+          <div class="bg-paper col-start-5 row-start-5 rounded-sm"></div>
+          <div class="bg-paper col-start-6 row-start-6 rounded-sm"></div>
+          <div class="bg-paper col-start-7 row-start-5 rounded-sm"></div>
+          <div class="bg-paper col-start-5 row-start-7 rounded-sm"></div>
+        </div>
+      </div>
+
+      <p class="mt-6 text-[12px] text-paper/40 text-center max-w-[220px]">Pointez la caméra sur le QR code de la carte Wallet du client.</p>
+
+      <!-- Simulate scan button (demo) -->
+      <button onclick="simulateScan()" class="mt-8 h-12 px-8 rounded-full bg-paper text-ink text-[14px] font-semibold hover:bg-white transition-colors">
+        Simuler un scan ↵
+      </button>
+    </div>
+
+    <!-- Manual mode -->
+    <div id="modeManual" class="w-full flex-col items-center hidden">
+      <div class="w-full max-w-[320px]">
+        <div class="text-center mb-6">
+          <div class="text-[13px] text-paper/60 mb-2">Entrez le code à 6 chiffres</div>
+          <div class="font-display text-[48px] -tracking-[0.05em] leading-none tabular-nums text-paper min-h-[56px]" id="codeDisplay">— — — — — —</div>
+        </div>
+        <!-- Numpad -->
+        <div class="grid grid-cols-3 gap-2.5">
+          <button class="num-key" data-n="1">1</button>
+          <button class="num-key" data-n="2">2</button>
+          <button class="num-key" data-n="3">3</button>
+          <button class="num-key" data-n="4">4</button>
+          <button class="num-key" data-n="5">5</button>
+          <button class="num-key" data-n="6">6</button>
+          <button class="num-key" data-n="7">7</button>
+          <button class="num-key" data-n="8">8</button>
+          <button class="num-key" data-n="9">9</button>
+          <button class="num-key text-[14px] text-paper/50" data-n="clear">✕</button>
+          <button class="num-key" data-n="0">0</button>
+          <button class="num-key text-[20px]" data-n="ok" id="codeConfirm">↵</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================
+       STATE 1 : CLIENT FOUND
+  ============================= -->
+  <div id="stateFound" class="state flex-col flex-1 items-center justify-center px-6 py-10">
+    <div class="w-full max-w-[400px] mx-auto slide-up">
+
+      <!-- Client card -->
+      <div class="bg-white/5 border border-white/10 rounded-2xl p-6 text-center">
+        <div class="w-14 h-14 rounded-full bg-ink-2 border border-white/10 grid place-items-center mx-auto text-[20px] font-semibold">ML</div>
+        <div class="mt-3 text-[18px] font-semibold">Marie Laurent</div>
+        <div class="font-mono text-[11px] text-paper/40 tracking-wider mt-0.5">CARTE #4821 · CAFÉ BLOOM</div>
+
+        <!-- Progress stamps -->
+        <div class="mt-6">
+          <div class="flex justify-between text-[11px] text-paper/50 mb-2">
+            <span>Progression</span>
+            <span id="stampCount" class="font-mono">5 / 8</span>
+          </div>
+          <div class="flex gap-1.5 justify-center flex-wrap" id="stampsRow">
+            <!-- JS fills this -->
+          </div>
+          <div class="mt-3 text-[12px] text-paper/50" id="stampMsg">Plus que <strong class="text-paper">3 tampons</strong> avant un café offert</div>
+        </div>
+
+        <!-- Points total (for points-type cards) -->
+        <div class="mt-5 pt-5 border-t border-white/8 grid grid-cols-3 gap-3 text-center">
+          <div>
+            <div class="font-display text-[22px] tabular-nums">5</div>
+            <div class="text-[10px] font-mono text-paper/40 tracking-wider mt-0.5">VISITES</div>
+          </div>
+          <div>
+            <div class="font-display text-[22px] tabular-nums">38j</div>
+            <div class="text-[10px] font-mono text-paper/40 tracking-wider mt-0.5">MEMBRE</div>
+          </div>
+          <div>
+            <div class="font-display text-[22px] tabular-nums">160</div>
+            <div class="text-[10px] font-mono text-paper/40 tracking-wider mt-0.5">POINTS</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Action buttons -->
+      <div class="mt-5 grid grid-cols-2 gap-3">
+        <button onclick="addStamp()" class="h-14 rounded-xl bg-paper text-ink text-[14px] font-semibold hover:bg-white transition-colors">
+          + Tampon
+        </button>
+        <button onclick="redeemReward()" class="h-14 rounded-xl border border-ox/40 text-[14px] font-medium text-ox-soft hover:border-ox/70 hover:bg-ox/10 transition-all" id="redeemBtn">
+          Utiliser récompense
+        </button>
+      </div>
+      <button onclick="goBack()" class="mt-3 w-full h-10 rounded-xl border border-white/10 text-[12px] text-paper/50 hover:border-white/20 hover:text-paper/70 transition-all">
+        ← Scanner un autre client
+      </button>
+    </div>
+  </div>
+
+  <!-- ============================
+       STATE 2 : STAMP ADDED
+  ============================= -->
+  <div id="stateStamped" class="state flex-col flex-1 items-center justify-center px-6 py-10">
+    <div class="w-full max-w-[360px] mx-auto text-center success-anim">
+      <!-- Big checkmark -->
+      <div class="w-24 h-24 rounded-full bg-moss/20 border border-moss/30 grid place-items-center mx-auto">
+        <svg viewBox="0 0 24 24" class="w-12 h-12 text-[#5a9a70]" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="20 6 9 17 4 12"/>
+        </svg>
+      </div>
+
+      <div class="mt-6">
+        <div class="font-display text-[40px] -tracking-[0.05em]">Tampon ajouté !</div>
+        <div class="font-serif italic text-[22px] text-ox-soft mt-1">Marie Laurent</div>
+      </div>
+
+      <!-- Updated stamps -->
+      <div class="mt-6 flex gap-1.5 justify-center flex-wrap" id="stampsRowSuccess"></div>
+      <div class="mt-2 text-[13px] text-paper/60" id="successMsg">6/8 tampons — <strong class="text-paper">2 encore</strong> avant un café offert</div>
+
+      <!-- Push sent indicator -->
+      <div class="mt-6 inline-flex items-center gap-2 px-4 py-2.5 rounded-full bg-white/6 border border-white/10 text-[12px] text-paper/70">
+        <svg class="w-3.5 h-3.5 text-paper/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 14 19.79 19.79 0 0 1 1.61 5.35 2 2 0 0 1 3.6 3h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 10.91a16 16 0 0 0 6.08 6.08l.96-.96a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+        Notification envoyée — Wallet mis à jour
+      </div>
+
+      <button onclick="goBack()" class="mt-8 h-12 px-8 rounded-full bg-paper text-ink text-[14px] font-semibold hover:bg-white transition-colors">
+        ← Scanner suivant
+      </button>
+    </div>
+  </div>
+
+  <!-- ============================
+       STATE 3 : REWARD REDEEMED
+  ============================= -->
+  <div id="stateRedeemed" class="state flex-col flex-1 items-center justify-center px-6 py-10">
+    <div class="w-full max-w-[360px] mx-auto text-center success-anim">
+      <div class="w-24 h-24 rounded-full bg-ox/20 border border-ox/30 grid place-items-center mx-auto">
+        <svg viewBox="0 0 24 24" class="w-12 h-12 text-ox-soft" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="20 12 20 22 4 22 4 12"/>
+          <rect x="2" y="7" width="20" height="5"/>
+          <line x1="12" y1="22" x2="12" y2="7"/>
+          <path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/>
+          <path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/>
+        </svg>
+      </div>
+
+      <div class="mt-6">
+        <div class="font-display text-[40px] -tracking-[0.05em]">Récompense validée !</div>
+        <div class="font-serif italic text-[22px] text-ox-soft mt-1">1 café offert à Marie</div>
+      </div>
+
+      <div class="mt-6 bg-white/5 border border-white/10 rounded-xl p-4 text-[13px] text-paper/60">
+        La carte a été remise à zéro.<br>
+        <span class="text-paper font-medium">0 / 8 tampons</span> · Prêt pour la prochaine série.
+      </div>
+
+      <button onclick="goBack()" class="mt-8 h-12 px-8 rounded-full bg-paper text-ink text-[14px] font-semibold hover:bg-white transition-colors">
+        ← Scanner suivant
+      </button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  // ----- State management -----
+  function showState(id) {
+    document.querySelectorAll('.state').forEach(s => s.classList.remove('active'));
+    const el = document.getElementById(id);
+    el.classList.add('active');
+    // Re-trigger animations
+    el.querySelectorAll('.success-anim, .slide-up, .stamp-anim').forEach(a => {
+      a.style.animation = 'none';
+      a.offsetHeight; // reflow
+      a.style.animation = '';
+    });
+  }
+
+  // ----- Stamps row builder -----
+  const TOTAL_STAMPS = 8;
+  function buildStamps(container, filled, animate = false) {
+    container.innerHTML = '';
+    for (let i = 0; i < TOTAL_STAMPS; i++) {
+      const s = document.createElement('span');
+      s.className = `w-7 h-7 rounded-full flex items-center justify-center transition-all ${i < filled ? 'bg-paper' : 'border border-white/20'}`;
+      if (i < filled) {
+        s.innerHTML = `<svg class="w-3 h-3" viewBox="0 0 10 10"><path d="M2 5L4 7L8 3" fill="none" stroke="#0E0E10" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+        if (animate && i === filled - 1) s.classList.add('stamp-anim');
+      }
+      container.appendChild(s);
+    }
+  }
+
+  // Init stamps
+  buildStamps(document.getElementById('stampsRow'), 5);
+  buildStamps(document.getElementById('stampsRowSuccess'), 6, true);
+
+  // ----- Mode toggle -----
+  document.querySelectorAll('.mode-btn').forEach(btn => btn.addEventListener('click', () => {
+    document.querySelectorAll('.mode-btn').forEach(x => {
+      x.classList.remove('active', 'bg-paper', 'text-ink', 'font-semibold');
+      x.classList.add('text-paper/50');
+    });
+    btn.classList.add('active', 'bg-paper', 'text-ink', 'font-semibold');
+    btn.classList.remove('text-paper/50');
+    document.getElementById('modeQR').classList.toggle('hidden', btn.dataset.mode !== 'qr');
+    document.getElementById('modeManual').classList.toggle('hidden', btn.dataset.mode !== 'manual');
+    document.getElementById('modeManual').classList.toggle('flex', btn.dataset.mode === 'manual');
+  }));
+  // Init first mode active
+  document.querySelector('.mode-btn.active').classList.add('bg-paper', 'text-ink', 'font-semibold');
+
+  // ----- Manual numpad -----
+  let codeStr = '';
+  function updateCodeDisplay() {
+    const chars = codeStr.padEnd(6, '—').split('').join(' ');
+    document.getElementById('codeDisplay').textContent = chars;
+  }
+  document.querySelectorAll('.num-key').forEach(k => k.addEventListener('click', () => {
+    const n = k.dataset.n;
+    if (n === 'clear') { codeStr = codeStr.slice(0, -1); }
+    else if (n === 'ok') { if (codeStr.length === 6) simulateScan(); }
+    else if (codeStr.length < 6) { codeStr += n; }
+    updateCodeDisplay();
+    if (codeStr.length === 6 && n !== 'ok') {
+      setTimeout(() => simulateScan(), 120);
+    }
+  }));
+
+  // ----- Actions -----
+  function simulateScan() {
+    showState('stateFound');
+    buildStamps(document.getElementById('stampsRow'), 5);
+  }
+
+  function addStamp() {
+    buildStamps(document.getElementById('stampsRowSuccess'), 6, true);
+    document.getElementById('successMsg').innerHTML = '6/8 tampons — <strong class="text-paper">2 encore</strong> avant un café offert';
+    showState('stateStamped');
+  }
+
+  function redeemReward() {
+    showState('stateRedeemed');
+  }
+
+  function goBack() {
+    codeStr = '';
+    updateCodeDisplay();
+    showState('stateScanning');
+  }
+</script>
+</body>
+</html>

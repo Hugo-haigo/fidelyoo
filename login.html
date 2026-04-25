@@ -1,0 +1,554 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Fidelyoo — Connexion</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter+Tight:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="tailwind.config.js"></script>
+<script>tailwind.config = window.fidelyooTailwindConfig;</script>
+<style>
+  html, body { height: 100%; }
+  body { font-family: 'Inter Tight', ui-sans-serif, system-ui, sans-serif; -webkit-font-smoothing: antialiased; color: #0E0E10; background: #FAFAF7; }
+  .font-serif  { font-family: 'Instrument Serif', 'Times New Roman', serif; letter-spacing: -0.02em; }
+  .font-display{ font-family: 'Inter Tight', sans-serif; font-weight: 800; letter-spacing: -0.05em; }
+  .font-tight  { font-family: 'Inter Tight', sans-serif; letter-spacing: -0.02em; }
+  .font-mono   { font-family: 'JetBrains Mono', ui-monospace, monospace; letter-spacing: 0.02em; }
+  .eyebrow     { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 10.5px; letter-spacing: 0.16em; text-transform: uppercase; color: #A29F97; }
+
+  /* Inputs */
+  .inp { width: 100%; height: 44px; padding: 0 14px; font-size: 14px; background: #FAFAF7; border: 1px solid rgba(14,14,16,0.14); border-radius: 10px; transition: all .15s; color: #0E0E10; }
+  .inp:focus { outline: none; border-color: #0E0E10; box-shadow: 0 0 0 3px rgba(14,14,16,0.06); }
+  .inp::placeholder { color: #A29F97; }
+
+  /* Reveal */
+  .reveal { opacity: 0; transform: translateY(18px); transition: opacity .9s cubic-bezier(.16,1,.3,1), transform .9s cubic-bezier(.16,1,.3,1); }
+  .reveal.in { opacity: 1; transform: none; }
+  .reveal.d-1 { transition-delay: .08s; }
+  .reveal.d-2 { transition-delay: .18s; }
+  .reveal.d-3 { transition-delay: .28s; }
+  @media (prefers-reduced-motion: reduce) { .reveal { opacity:1; transform:none; transition:none; } }
+
+  /* Tabs */
+  .auth-tab { padding: 10px 16px; font-size: 13px; border-radius: 8px; color: #6B6A66; transition: all .15s; cursor: pointer; }
+  .auth-tab.active { background: #0E0E10; color: #FAFAF7; }
+
+  /* Phone 3D float */
+  @keyframes floaty {
+    0%,100% { transform: rotateY(-12deg) rotateX(4deg) translateY(0); }
+    50%      { transform: rotateY(-12deg) rotateX(4deg) translateY(-7px); }
+  }
+  .phone-3d { transform-style: preserve-3d; transform: rotateY(-12deg) rotateX(4deg); animation: floaty 9s ease-in-out infinite; }
+  .scene-3d { perspective: 1400px; }
+  @media (prefers-reduced-motion: reduce) { .phone-3d { animation: none; } }
+
+  /* Marquee */
+  @keyframes marquee-v { 0% { transform: translateY(0); } 100% { transform: translateY(-50%); } }
+  .marquee-v { animation: marquee-v 36s linear infinite; }
+
+  /* Stamp */
+  .stamp { width: 14px; height: 14px; border-radius: 50%; border: 1.5px dashed rgba(255,255,255,0.35); display: grid; place-items: center; }
+  .stamp.filled { background: #FAFAF7; border: 1.5px solid #FAFAF7; }
+  .stamp.filled svg { color: #9A2232; }
+
+  /* ───────────────────────────────────────────
+     iOS Push notification banner
+     ─────────────────────────────────────────── */
+  #pushBanner {
+    transform: translateY(-120%);
+    will-change: transform, opacity;
+  }
+  /* Frosted glass pill matching iOS 16+ style */
+  .push-pill {
+    background: rgba(48, 48, 52, 0.88);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 16px;
+    box-shadow: 0 6px 24px rgba(0,0,0,0.45);
+  }
+
+  /* subtle pulsing dot for "new notification" */
+  @keyframes dotPulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50%       { opacity: 0.5; transform: scale(0.7); }
+  }
+  .notif-dot { animation: dotPulse 1.8s ease-in-out infinite; }
+
+  /* Long-press expand hint */
+  @keyframes expandHint {
+    0%   { transform: scaleX(1); opacity: 0.4; }
+    60%  { transform: scaleX(0.6); opacity: 0.8; }
+    100% { transform: scaleX(1); opacity: 0.4; }
+  }
+</style>
+</head>
+<body class="text-ink">
+
+<div class="min-h-screen lg:h-screen grid lg:grid-cols-[1fr_1.2fr] overflow-hidden">
+
+  <!-- ─── LEFT: form ─────────────────────────────────── -->
+  <section class="flex flex-col min-h-screen lg:h-screen overflow-y-auto">
+    <!-- Top nav -->
+    <header class="px-8 pt-7 flex items-center justify-between shrink-0">
+      <a href="index.html" class="flex items-center gap-2.5">
+        <span class="grid place-items-center w-7 h-7 rounded-md bg-ink">
+          <svg viewBox="0 0 100 100" class="w-5 h-5" aria-hidden>
+            <circle cx="34" cy="42" r="14" fill="none" stroke="#FAFAF7" stroke-width="5"/>
+            <circle cx="34" cy="44" r="3.5" fill="#FAFAF7"/>
+            <circle cx="66" cy="42" r="14" fill="none" stroke="#FAFAF7" stroke-width="5"/>
+            <circle cx="66" cy="44" r="3.5" fill="#FAFAF7"/>
+            <path d="M 26 70 Q 50 88 74 70" fill="none" stroke="#9A2232" stroke-width="5" stroke-linecap="round"/>
+          </svg>
+        </span>
+        <span class="font-semibold text-lg -tracking-[0.03em]">Fidely<span class="relative">oo<svg class="absolute -bottom-1 left-0 right-0 w-full h-2" viewBox="0 0 40 12" preserveAspectRatio="none"><path d="M 2 2 Q 20 12 38 2" fill="none" stroke="#9A2232" stroke-width="2" stroke-linecap="round"/></svg></span></span>
+      </a>
+      <div class="text-[12.5px] text-mute">
+        Pas de compte ?
+        <a href="login.html?mode=signup" class="ml-1 text-ink font-medium underline underline-offset-4 hover:no-underline">Réserver une démo</a>
+      </div>
+    </header>
+
+    <!-- Form centered -->
+    <div class="flex-1 flex items-center justify-center px-8 py-10">
+      <div class="w-full max-w-[440px]">
+
+        <!-- Mode tabs -->
+        <div class="inline-flex p-1 bg-paper-2 rounded-lg border border-line reveal">
+          <button class="auth-tab active" data-mode="signin">Se connecter</button>
+          <button class="auth-tab" data-mode="signup">Créer un compte</button>
+        </div>
+
+        <!-- Signin -->
+        <div id="signin" class="mt-8">
+          <div class="reveal d-1">
+            <div class="eyebrow">Connexion · Espace commerçant</div>
+            <h1 class="leading-[0.95] mt-3">
+              <span class="font-display text-[48px] -tracking-[0.05em] block">Bienvenue.</span>
+              <span class="font-serif italic text-[56px] text-ox -tracking-[0.025em] block mt-0.5">On vous attendait.</span>
+            </h1>
+            <p class="text-[14px] text-mute mt-4">
+              Pilotez vos cartes, vos campagnes et vos clients depuis un seul endroit.
+            </p>
+          </div>
+
+          <!-- Social -->
+          <div class="mt-8 grid grid-cols-2 gap-3 reveal d-1">
+            <button class="h-11 rounded-lg border border-line hover:border-ink transition-colors flex items-center justify-center gap-2 text-[13px] font-medium">
+              <svg viewBox="0 0 24 24" class="w-4 h-4">
+                <path fill="#4285F4" d="M23.49 12.27c0-.79-.07-1.54-.19-2.27H12v4.51h6.44c-.28 1.48-1.12 2.73-2.39 3.58v2.98h3.86c2.26-2.09 3.58-5.17 3.58-8.8z"/>
+                <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.86-2.98c-1.08.72-2.45 1.16-4.07 1.16-3.13 0-5.78-2.11-6.73-4.96H1.29v3.09C3.26 21.3 7.31 24 12 24z"/>
+                <path fill="#FBBC05" d="M5.27 14.31c-.25-.72-.39-1.49-.39-2.31s.14-1.59.39-2.31V6.6H1.29C.47 8.24 0 10.06 0 12s.47 3.76 1.29 5.4l3.98-3.09z"/>
+                <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.31 0 3.26 2.7 1.29 6.6l3.98 3.09C6.22 6.86 8.87 4.75 12 4.75z"/>
+              </svg>
+              Google
+            </button>
+            <button class="h-11 rounded-lg border border-line hover:border-ink transition-colors flex items-center justify-center gap-2 text-[13px] font-medium">
+              <svg viewBox="0 0 24 24" class="w-4 h-4" fill="currentColor"><path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09l.01-.01zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/></svg>
+              Apple
+            </button>
+          </div>
+
+          <!-- Divider -->
+          <div class="relative my-7 reveal d-2">
+            <div class="h-px bg-line"></div>
+            <span class="absolute left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 bg-paper px-3 font-mono text-[10px] tracking-[0.18em] text-mute uppercase">Ou</span>
+          </div>
+
+          <form class="space-y-4 reveal d-2" onsubmit="event.preventDefault(); location.href='app.html';">
+            <div>
+              <label class="font-mono text-[10.5px] tracking-wider text-mute uppercase block mb-2">Email</label>
+              <input type="email" class="inp" placeholder="hugo@cafebloom.fr" autocomplete="email"/>
+            </div>
+            <div>
+              <div class="flex items-center justify-between mb-2">
+                <label class="font-mono text-[10.5px] tracking-wider text-mute uppercase">Mot de passe</label>
+                <a href="#" class="text-[11.5px] text-ink underline underline-offset-2 hover:no-underline">Oublié ?</a>
+              </div>
+              <input type="password" class="inp" placeholder="••••••••••••" autocomplete="current-password"/>
+            </div>
+
+            <label class="flex items-center gap-2.5 text-[13px] text-mute cursor-pointer select-none">
+              <input type="checkbox" class="w-4 h-4 rounded accent-ink"/>
+              Rester connecté
+            </label>
+
+            <button type="submit" class="w-full h-12 rounded-lg bg-ink text-paper text-[14px] font-medium hover:bg-ink-soft transition-colors flex items-center justify-center gap-2 group">
+              Se connecter
+              <span class="transition-transform group-hover:translate-x-1">→</span>
+            </button>
+          </form>
+
+          <div class="mt-8 pt-6 border-t border-line flex items-center gap-3 reveal d-3">
+            <div class="w-9 h-9 rounded-lg bg-paper-2 grid place-items-center shrink-0 border border-line">
+              <svg viewBox="0 0 24 24" class="w-4 h-4 text-mute" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+            </div>
+            <div class="flex-1">
+              <div class="text-[12.5px] font-medium">Sécurisé par défaut</div>
+              <div class="text-[11.5px] text-mute">2FA, SSO et journal d'accès inclus sur tous les plans.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="px-8 py-6 border-t border-line flex items-center justify-between text-[11.5px] text-mute shrink-0">
+      <div class="font-mono tracking-wider">© FIDELYOO · 2026</div>
+      <div class="flex items-center gap-5">
+        <a href="#" class="hover:text-ink transition-colors">CGU</a>
+        <a href="#" class="hover:text-ink transition-colors">Confidentialité</a>
+        <a href="#" class="hover:text-ink transition-colors">Support</a>
+      </div>
+    </footer>
+  </section>
+
+  <!-- ─── RIGHT: visual ink panel ─────────────────────── -->
+  <aside class="hidden lg:block relative overflow-hidden bg-ink text-paper">
+
+    <!-- Ambient glow blobs -->
+    <div class="absolute -top-40 -right-40 w-[600px] h-[600px] rounded-full bg-ox-deep/30 blur-3xl pointer-events-none"></div>
+    <div class="absolute -bottom-40 -left-40 w-[500px] h-[500px] rounded-full bg-ox/15 blur-3xl pointer-events-none"></div>
+
+    <!-- Grid pattern -->
+    <svg class="absolute inset-0 w-full h-full opacity-[0.06] pointer-events-none" aria-hidden>
+      <defs>
+        <pattern id="grid" width="48" height="48" patternUnits="userSpaceOnUse">
+          <path d="M 48 0 L 0 0 0 48" fill="none" stroke="#FAFAF7" stroke-width="0.5"/>
+        </pattern>
+      </defs>
+      <rect width="100%" height="100%" fill="url(#grid)"/>
+    </svg>
+
+    <!-- Corner marks -->
+    <div class="absolute top-8 left-8 right-8 flex items-center justify-between font-mono text-[10.5px] tracking-[0.18em] text-paper/50 z-10">
+      <span>FIDELYOO · ESPACE PRO</span>
+      <span>v3.2 · APR 2026</span>
+    </div>
+    <div class="absolute bottom-8 left-8 right-8 flex items-center justify-between font-mono text-[10.5px] tracking-[0.18em] text-paper/50 z-10">
+      <span>PARIS · LYON · BORDEAUX</span>
+      <span>← LATITUDE 48.8566° N</span>
+    </div>
+
+    <!-- Scrollable content — clips behind corner marks -->
+    <div class="absolute inset-0 flex flex-col justify-center overflow-y-auto px-14 py-20 z-10">
+
+      <!-- Editorial quote -->
+      <div class="max-w-[500px] reveal">
+        <div class="font-mono text-[10px] tracking-[0.18em] text-ox-soft uppercase mb-4">— Ce qui change pour vos clients</div>
+        <h2 class="leading-[0.95]">
+          <span class="font-display text-[52px] -tracking-[0.05em] block">Vos clients<br>reviennent.</span>
+          <span class="font-serif italic text-[62px] text-ox-soft -tracking-[0.025em] block mt-1">Sans y penser.</span>
+        </h2>
+        <p class="text-paper/60 text-[14px] mt-5 max-w-[420px] leading-relaxed">
+          Un tampon à chaque passage, une notif au bon moment, une récompense pile quand il faut. Pas d'app à télécharger. Juste Apple Wallet ou Google Wallet.
+        </p>
+      </div>
+
+      <!-- Phone + stats row -->
+      <div class="scene-3d mt-10 flex items-center gap-8 reveal d-2">
+
+        <!-- ── iPhone frame ── -->
+        <div class="phone-3d shrink-0">
+          <div class="w-[205px] h-[418px] rounded-[40px] bg-[#1a1a1c] shadow-phone relative"
+               style="box-shadow: 0 0 0 1.5px #3a3a3c, 0 28px 60px rgba(0,0,0,.8), 6px 0 20px rgba(0,0,0,.4);">
+
+            <!-- Side button -->
+            <div class="absolute -right-[2.5px] top-[88px] w-[2.5px] h-[52px] rounded-r-full bg-[#3a3a3c]"></div>
+            <!-- Volume buttons -->
+            <div class="absolute -left-[2.5px] top-[72px] w-[2.5px] h-[30px] rounded-l-full bg-[#3a3a3c]"></div>
+            <div class="absolute -left-[2.5px] top-[110px] w-[2.5px] h-[30px] rounded-l-full bg-[#3a3a3c]"></div>
+            <div class="absolute -left-[2.5px] top-[148px] w-[2.5px] h-[56px] rounded-l-full bg-[#3a3a3c]"></div>
+
+            <!-- Screen bezel -->
+            <div class="absolute inset-[2.5px] rounded-[37px] bg-black overflow-hidden">
+
+              <!-- Dynamic Island -->
+              <div class="absolute top-[10px] left-1/2 -translate-x-1/2 w-[76px] h-[26px] rounded-full bg-black z-30"
+                   style="box-shadow: 0 0 0 1px rgba(255,255,255,0.04)"></div>
+
+              <!-- Screen wallpaper -->
+              <div class="absolute inset-0 bg-gradient-to-b from-[#1c1c2e] via-[#0e0e18] to-[#0a0a10]"></div>
+
+              <!-- Status bar -->
+              <div class="absolute top-0 left-0 right-0 flex items-center justify-between px-5 pt-2 z-20">
+                <span class="text-paper text-[10px] font-semibold tracking-tight">9:41</span>
+                <div class="flex items-center gap-1">
+                  <!-- signal bars -->
+                  <svg viewBox="0 0 16 12" class="w-3.5 h-3" fill="#FAFAF7">
+                    <rect x="0" y="8" width="2.5" height="4" rx="0.6" opacity="0.5"/>
+                    <rect x="3.5" y="5.5" width="2.5" height="6.5" rx="0.6" opacity="0.7"/>
+                    <rect x="7" y="3" width="2.5" height="9" rx="0.6" opacity="0.85"/>
+                    <rect x="10.5" y="0.5" width="2.5" height="11.5" rx="0.6"/>
+                  </svg>
+                  <!-- wifi -->
+                  <svg viewBox="0 0 16 12" class="w-3.5 h-3" fill="none" stroke="#FAFAF7" stroke-linecap="round">
+                    <path d="M 1 4 Q 8 -0.5 15 4" stroke-width="1.4" opacity="0.5"/>
+                    <path d="M 3 7 Q 8 3.5 13 7" stroke-width="1.4" opacity="0.8"/>
+                    <path d="M 5.5 10 Q 8 7.5 10.5 10" stroke-width="1.4"/>
+                    <circle cx="8" cy="12" r="1" fill="#FAFAF7"/>
+                  </svg>
+                  <!-- battery -->
+                  <div class="flex items-center gap-0.5">
+                    <div class="w-[18px] h-[9px] rounded-[2.5px] border border-white/70 relative">
+                      <div class="absolute inset-[1.5px] left-[1.5px] right-[2.5px] bg-white rounded-[1px]" style="right: 25%"></div>
+                    </div>
+                    <div class="w-[1.5px] h-[4px] bg-white/50 rounded-r-full"></div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- ───── iOS Push Notification Banner ───── -->
+              <!-- Positioned just below dynamic island -->
+              <div id="pushBanner"
+                   class="absolute left-2 right-2 z-40"
+                   style="top: 42px; transform: translateY(-120%); transition: transform 0.48s cubic-bezier(.34,1.28,.64,1); will-change: transform;">
+                <div class="push-pill px-3 py-2.5">
+                  <div class="flex items-start gap-2.5">
+                    <!-- App icon -->
+                    <div class="w-[28px] h-[28px] rounded-[7px] bg-paper grid place-items-center shrink-0 shadow-sm">
+                      <svg viewBox="0 0 100 100" class="w-[18px] h-[18px]" aria-hidden>
+                        <circle cx="34" cy="42" r="14" fill="none" stroke="#0E0E10" stroke-width="8"/>
+                        <circle cx="66" cy="42" r="14" fill="none" stroke="#0E0E10" stroke-width="8"/>
+                        <path d="M 26 70 Q 50 88 74 70" fill="none" stroke="#9A2232" stroke-width="8" stroke-linecap="round"/>
+                      </svg>
+                    </div>
+                    <!-- Text -->
+                    <div class="flex-1 min-w-0">
+                      <div class="flex items-baseline justify-between gap-2">
+                        <span class="text-[9.5px] font-semibold text-white/90 uppercase tracking-[0.06em]">Café Bloom</span>
+                        <span class="text-[8px] text-white/45 shrink-0 font-medium">maintenant</span>
+                      </div>
+                      <div id="pushTitle" class="text-[9.5px] font-semibold text-white leading-tight mt-[2px]">Nouveau tampon !</div>
+                      <div id="pushBody"  class="text-[9px] text-white/70 leading-snug mt-[1px] line-clamp-2">Votre café vous attend, Marie ☕</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Lock screen time -->
+              <div class="absolute top-[72px] left-0 right-0 text-center z-10">
+                <div class="font-display text-[44px] -tracking-[0.04em] text-white leading-none">9:41</div>
+                <div class="text-white/55 text-[11px] font-medium mt-0.5 tracking-wide">Vendredi 24 avril</div>
+              </div>
+
+              <!-- Wallet card -->
+              <div class="absolute bottom-[28px] left-3 right-3 z-10">
+                <div class="rounded-2xl bg-ox p-3 text-paper relative overflow-hidden shadow-lg">
+                  <!-- Subtle texture -->
+                  <div class="absolute inset-0 opacity-[0.07]"
+                       style="background-image: radial-gradient(ellipse at 80% 20%, #fff 0%, transparent 60%)"></div>
+                  <div class="relative">
+                    <div class="flex items-start justify-between">
+                      <div>
+                        <div class="text-[8px] font-mono tracking-[0.14em] text-paper/70">CAFÉ BLOOM</div>
+                        <div class="font-tight font-semibold text-[12px] leading-tight mt-0.5">Marie Laurent</div>
+                      </div>
+                      <div class="w-[18px] h-[18px] rounded bg-paper grid place-items-center">
+                        <svg viewBox="0 0 100 100" class="w-[11px] h-[11px]" aria-hidden>
+                          <circle cx="34" cy="42" r="14" fill="none" stroke="#0E0E10" stroke-width="9"/>
+                          <circle cx="66" cy="42" r="14" fill="none" stroke="#0E0E10" stroke-width="9"/>
+                          <path d="M 26 70 Q 50 88 74 70" fill="none" stroke="#9A2232" stroke-width="9" stroke-linecap="round"/>
+                        </svg>
+                      </div>
+                    </div>
+                    <div class="mt-2.5 grid grid-cols-8 gap-[3px]">
+                      <div class="stamp filled"><svg viewBox="0 0 20 20" class="w-[7px] h-[7px]" fill="none" stroke="currentColor" stroke-width="3.5"><path d="M4 10l3.5 3.5 8-8"/></svg></div>
+                      <div class="stamp filled"><svg viewBox="0 0 20 20" class="w-[7px] h-[7px]" fill="none" stroke="currentColor" stroke-width="3.5"><path d="M4 10l3.5 3.5 8-8"/></svg></div>
+                      <div class="stamp filled"><svg viewBox="0 0 20 20" class="w-[7px] h-[7px]" fill="none" stroke="currentColor" stroke-width="3.5"><path d="M4 10l3.5 3.5 8-8"/></svg></div>
+                      <div class="stamp filled"><svg viewBox="0 0 20 20" class="w-[7px] h-[7px]" fill="none" stroke="currentColor" stroke-width="3.5"><path d="M4 10l3.5 3.5 8-8"/></svg></div>
+                      <div class="stamp filled"><svg viewBox="0 0 20 20" class="w-[7px] h-[7px]" fill="none" stroke="currentColor" stroke-width="3.5"><path d="M4 10l3.5 3.5 8-8"/></svg></div>
+                      <div class="stamp" id="nextStamp"></div>
+                      <div class="stamp"></div>
+                      <div class="stamp"></div>
+                    </div>
+                    <div class="mt-1.5 text-[7.5px] text-paper/75 flex items-center justify-between">
+                      <span>Plus que 3 avant un café offert</span>
+                      <span class="text-paper/50 font-mono">5/8</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+            </div><!-- /screen -->
+          </div><!-- /phone frame -->
+        </div><!-- /phone-3d -->
+
+        <!-- Scrolling stats column -->
+        <div class="flex-1 h-[418px] overflow-hidden relative">
+          <div class="absolute inset-0 bg-gradient-to-b from-ink via-transparent to-ink pointer-events-none z-10"></div>
+          <div class="marquee-v space-y-3">
+            <div class="rounded-xl bg-ink-soft border border-white/10 p-4">
+              <div class="font-mono text-[10px] text-paper/50 tracking-wider">PARIS 11e · MATIN</div>
+              <div class="font-display text-[20px] mt-1.5 leading-none">+38 visites</div>
+              <div class="text-[11px] text-paper/60 mt-1.5">vs jeudi dernier · <span class="text-ox-soft">+24%</span></div>
+            </div>
+            <div class="rounded-xl bg-ink-soft border border-white/10 p-4">
+              <div class="font-mono text-[10px] text-paper/50 tracking-wider">MARIE L. · HABITUÉE</div>
+              <div class="font-display text-[20px] mt-1.5 leading-none">8ᵉ café</div>
+              <div class="text-[11px] text-paper/60 mt-1.5">Récompense débloquée ★</div>
+            </div>
+            <div class="rounded-xl bg-ink-soft border border-white/10 p-4">
+              <div class="font-mono text-[10px] text-paper/50 tracking-wider">BRUNCH DU DIMANCHE</div>
+              <div class="font-display text-[20px] mt-1.5 leading-none">4 820 €</div>
+              <div class="text-[11px] text-paper/60 mt-1.5">CA généré · push de 842 clients</div>
+            </div>
+            <div class="rounded-xl bg-ink-soft border border-white/10 p-4">
+              <div class="font-mono text-[10px] text-paper/50 tracking-wider">SOPHIE M.</div>
+              <div class="font-display text-[20px] mt-1.5 leading-none">★ 5,0 Google</div>
+              <div class="text-[11px] text-paper/60 mt-1.5">"Le meilleur latte du 11e"</div>
+            </div>
+            <div class="rounded-xl bg-ink-soft border border-white/10 p-4">
+              <div class="font-mono text-[10px] text-paper/50 tracking-wider">TAUX RETOUR</div>
+              <div class="font-display text-[20px] mt-1.5 leading-none">+61 %</div>
+              <div class="text-[11px] text-paper/60 mt-1.5">clients revenant en J+7</div>
+            </div>
+            <!-- dupe for seamless loop -->
+            <div class="rounded-xl bg-ink-soft border border-white/10 p-4">
+              <div class="font-mono text-[10px] text-paper/50 tracking-wider">PARIS 11e · MATIN</div>
+              <div class="font-display text-[20px] mt-1.5 leading-none">+38 visites</div>
+              <div class="text-[11px] text-paper/60 mt-1.5">vs jeudi dernier · <span class="text-ox-soft">+24%</span></div>
+            </div>
+            <div class="rounded-xl bg-ink-soft border border-white/10 p-4">
+              <div class="font-mono text-[10px] text-paper/50 tracking-wider">MARIE L. · HABITUÉE</div>
+              <div class="font-display text-[20px] mt-1.5 leading-none">8ᵉ café</div>
+              <div class="text-[11px] text-paper/60 mt-1.5">Récompense débloquée ★</div>
+            </div>
+            <div class="rounded-xl bg-ink-soft border border-white/10 p-4">
+              <div class="font-mono text-[10px] text-paper/50 tracking-wider">BRUNCH DU DIMANCHE</div>
+              <div class="font-display text-[20px] mt-1.5 leading-none">4 820 €</div>
+              <div class="text-[11px] text-paper/60 mt-1.5">CA généré · push de 842 clients</div>
+            </div>
+            <div class="rounded-xl bg-ink-soft border border-white/10 p-4">
+              <div class="font-mono text-[10px] text-paper/50 tracking-wider">SOPHIE M.</div>
+              <div class="font-display text-[20px] mt-1.5 leading-none">★ 5,0 Google</div>
+              <div class="text-[11px] text-paper/60 mt-1.5">"Le meilleur latte du 11e"</div>
+            </div>
+            <div class="rounded-xl bg-ink-soft border border-white/10 p-4">
+              <div class="font-mono text-[10px] text-paper/50 tracking-wider">TAUX RETOUR</div>
+              <div class="font-display text-[20px] mt-1.5 leading-none">+61 %</div>
+              <div class="text-[11px] text-paper/60 mt-1.5">clients revenant en J+7</div>
+            </div>
+          </div>
+        </div>
+      </div><!-- /phone+stats -->
+
+      <!-- Trust row -->
+      <div class="mt-8 pt-6 border-t border-white/8 flex items-center justify-between reveal d-3">
+        <div>
+          <div class="font-mono text-[10px] tracking-[0.18em] text-paper/40 uppercase">Déjà adopté par</div>
+          <div class="flex items-center gap-5 mt-2.5 text-paper/75 text-[12.5px]">
+            <span>Café Bloom</span>
+            <span class="text-paper/20">·</span>
+            <span>Lucette</span>
+            <span class="text-paper/20">·</span>
+            <span>Atelier Rosa</span>
+            <span class="text-paper/20">·</span>
+            <span class="text-paper/50">+ 1 284 marques</span>
+          </div>
+        </div>
+        <!-- Facepile -->
+        <div class="flex -space-x-2">
+          <div class="w-7 h-7 rounded-full bg-ox/60 border-2 border-ink grid place-items-center text-[9px] font-semibold text-paper">M</div>
+          <div class="w-7 h-7 rounded-full bg-ink-soft border-2 border-ink grid place-items-center text-[9px] font-semibold text-paper">S</div>
+          <div class="w-7 h-7 rounded-full bg-[#2a3a2a] border-2 border-ink grid place-items-center text-[9px] font-semibold text-paper">L</div>
+          <div class="w-7 h-7 rounded-full bg-[#1a2a3a] border-2 border-ink grid place-items-center text-[9px] font-semibold text-paper/60 text-[8px]">+4k</div>
+        </div>
+      </div>
+    </div><!-- /scrollable content -->
+  </aside>
+</div>
+
+<script>
+  /* ── Reveal on mount ── */
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } });
+  }, { threshold: 0.05 });
+  document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+
+  /* ── Mode tabs ── */
+  const url  = new URL(location.href);
+  const mode = url.searchParams.get('mode');
+  if (mode === 'signup') {
+    document.querySelectorAll('.auth-tab').forEach(t => t.classList.toggle('active'));
+  }
+  document.querySelectorAll('.auth-tab').forEach(t => t.addEventListener('click', () => {
+    const m = t.dataset.mode;
+    const u = new URL(location.href); u.searchParams.set('mode', m); history.replaceState({}, '', u);
+    document.querySelectorAll('.auth-tab').forEach(x => x.classList.remove('active'));
+    t.classList.add('active');
+  }));
+
+  /* ──────────────────────────────────────────────────────
+     iOS Push Notification – realistic cycling animation
+     Slide in from top (below Dynamic Island), hold 3.2s,
+     slide back up, wait 3s, repeat with next message.
+  ────────────────────────────────────────────────────── */
+  const pushMessages = [
+    {
+      title: 'Nouveau tampon !',
+      body:  'Votre café vous attend, Marie ☕'
+    },
+    {
+      title: 'Plus que 2 tampons 👀',
+      body:  'Encore 2 passages et c\'est un café offert !'
+    },
+    {
+      title: 'Récompense débloquée 🎉',
+      body:  'Votre café gratuit vous attend — à bientôt !'
+    },
+    {
+      title: 'Brunch ce dimanche 🥐',
+      body:  'Réservez votre table, places limitées !'
+    },
+  ];
+
+  const banner    = document.getElementById('pushBanner');
+  const pushTitle = document.getElementById('pushTitle');
+  const pushBody  = document.getElementById('pushBody');
+  const nextStamp = document.getElementById('nextStamp');
+
+  let pushIdx     = 0;
+  let pushVisible = false;
+
+  function showPush() {
+    if (pushVisible) return;
+    pushVisible = true;
+
+    const msg = pushMessages[pushIdx % pushMessages.length];
+    pushIdx++;
+
+    /* Update content before animating in */
+    pushTitle.textContent = msg.title;
+    pushBody.textContent  = msg.body;
+
+    /* Slide in */
+    banner.style.transition = 'transform 0.50s cubic-bezier(.34,1.28,.64,1)';
+    banner.style.transform  = 'translateY(0)';
+
+    /* Animate the 6th stamp filling (visual feedback) */
+    if (pushIdx % pushMessages.length === 1) {
+      nextStamp.classList.add('filled');
+      nextStamp.innerHTML = '<svg viewBox="0 0 20 20" class="w-[7px] h-[7px]" fill="none" stroke="currentColor" stroke-width="3.5"><path d="M4 10l3.5 3.5 8-8"/></svg>';
+      nextStamp.style.transition = 'background 0.3s, border-color 0.3s';
+    }
+
+    /* Slide out after 3.4 s */
+    setTimeout(() => {
+      banner.style.transition = 'transform 0.38s cubic-bezier(.55,0,.1,1)';
+      banner.style.transform  = 'translateY(-120%)';
+      setTimeout(() => { pushVisible = false; }, 420);
+    }, 3400);
+  }
+
+  /* First notification after 1.8 s (page has settled) */
+  setTimeout(showPush, 1800);
+
+  /* Then every 7 s */
+  setInterval(showPush, 7000);
+</script>
+</body>
+</html>

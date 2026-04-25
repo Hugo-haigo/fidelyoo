@@ -1,0 +1,848 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Fidelyoo — Éditeur de carte</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter+Tight:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="tailwind.config.js"></script>
+<script>tailwind.config = window.fidelyooTailwindConfig;</script>
+<style>
+  html, body { height: 100%; }
+  body { font-family: 'Inter Tight', ui-sans-serif, system-ui, sans-serif; -webkit-font-smoothing: antialiased; color: #0E0E10; background: #F2F1EC; }
+  .font-serif { font-family: 'Instrument Serif', 'Times New Roman', serif; letter-spacing: -0.02em; }
+  .font-display { font-family: 'Inter Tight', sans-serif; font-weight: 800; letter-spacing: -0.05em; }
+  .font-tight { font-family: 'Inter Tight', sans-serif; letter-spacing: -0.02em; }
+  .font-mono { font-family: 'JetBrains Mono', ui-monospace, monospace; letter-spacing: 0.02em; }
+  .eyebrow { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: #A29F97; }
+  .tabular-nums { font-variant-numeric: tabular-nums; }
+
+  /* Inputs */
+  .inp { width: 100%; height: 38px; padding: 0 12px; font-size: 13px; background: #FAFAF7; border: 1px solid rgba(14,14,16,0.12); border-radius: 8px; transition: all .15s; color: #0E0E10; }
+  .inp:focus { outline: none; border-color: #0E0E10; box-shadow: 0 0 0 3px rgba(14,14,16,0.06); }
+  textarea.inp { height: auto; padding: 10px 12px; resize: vertical; min-height: 68px; font-family: inherit; }
+  .lbl { display: block; font-size: 11.5px; color: #6B6A66; margin-bottom: 6px; font-weight: 500; }
+
+  /* Swatch */
+  .swatch { width: 28px; height: 28px; border-radius: 8px; cursor: pointer; position: relative; transition: transform .15s; border: 1px solid rgba(14,14,16,0.08); }
+  .swatch:hover { transform: scale(1.08); }
+  .swatch.active::after { content: ''; position: absolute; inset: -3px; border-radius: 10px; border: 1.5px solid #0E0E10; }
+
+  /* Stamp */
+  .stamp { width: 22px; height: 22px; border-radius: 50%; border: 1.5px dashed rgba(255,255,255,0.45); display: grid; place-items: center; transition: all .3s; }
+  .stamp.filled { background: #FAFAF7; border: 1.5px solid #FAFAF7; }
+  .stamp.filled svg { color: #9A2232; }
+
+  /* Range */
+  input[type=range] { -webkit-appearance: none; appearance: none; background: transparent; width: 100%; }
+  input[type=range]::-webkit-slider-runnable-track { height: 4px; border-radius: 9999px; background: linear-gradient(to right, #0E0E10 var(--fill,50%), rgba(14,14,16,0.1) var(--fill,50%)); }
+  input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; appearance:none; width: 16px; height: 16px; border-radius: 9999px; background: #FAFAF7; border: 2px solid #0E0E10; margin-top: -6px; cursor: pointer; box-shadow: 0 1px 3px rgba(14,14,16,.2); }
+
+  /* Tabs */
+  .tab { padding: 10px 14px; font-size: 12.5px; color: #6B6A66; border-bottom: 1.5px solid transparent; cursor: pointer; transition: all .15s; font-weight: 500; }
+  .tab.active { color: #0E0E10; border-color: #0E0E10; }
+
+  /* Cards */
+  .panel { background: #FAFAF7; border: 1px solid rgba(14,14,16,0.08); border-radius: 14px; }
+
+  /* Mock phone */
+  .phone-frame { width: 300px; height: 600px; background: #0E0E10; border-radius: 48px; padding: 12px; box-shadow: 0 40px 80px -20px rgba(14,14,16,.35), 0 20px 40px -10px rgba(14,14,16,.2); position: relative; }
+  .phone-frame::before { content: ''; position: absolute; top: 22px; left: 50%; transform: translateX(-50%); width: 90px; height: 24px; background: #000; border-radius: 14px; z-index: 2; }
+  .phone-screen { width: 100%; height: 100%; background: linear-gradient(180deg, #E8E6DE 0%, #F2F1EC 100%); border-radius: 38px; overflow: hidden; position: relative; padding: 52px 14px 14px 14px; }
+
+  /* Dynamic 3D tilt on mouse — card preview */
+  .preview-stage { perspective: 1600px; }
+  .preview-tilt { transform-style: preserve-3d; transition: transform .18s cubic-bezier(.16,1,.3,1); will-change: transform; }
+  .preview-tilt::after { content: ''; position: absolute; inset: 0; border-radius: 48px; pointer-events: none; background: radial-gradient(circle at var(--mx, 50%) var(--my, 0%), rgba(255,255,255,0.18), transparent 55%); opacity: 0; transition: opacity .3s; }
+  .preview-tilt.hovered::after { opacity: 1; }
+  @media (prefers-reduced-motion: reduce) { .preview-tilt { transition: none; } }
+
+  /* QR dots */
+  .qr-dot { width: 100%; height: 100%; background: #0E0E10; }
+
+  /* Scrollbar */
+  .scroll-soft::-webkit-scrollbar { width: 6px; }
+  .scroll-soft::-webkit-scrollbar-thumb { background: rgba(14,14,16,0.15); border-radius: 9999px; }
+
+  /* Preview anim */
+  @keyframes floaty { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+  .floaty { animation: floaty 6s ease-in-out infinite; }
+</style>
+</head>
+<body class="text-ink">
+
+<!-- TOP BAR -->
+<header class="sticky top-0 z-40 bg-paper border-b border-line">
+  <div class="h-14 px-6 flex items-center gap-4">
+    <a href="app.html" class="flex items-center gap-2 text-[13px] text-mute hover:text-ink transition-colors">
+      <svg viewBox="0 0 24 24" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+      Retour au tableau de bord
+    </a>
+    <div class="w-px h-5 bg-line-2 mx-2"></div>
+    <div class="flex items-center gap-2.5">
+      <span class="grid place-items-center w-6 h-6 rounded bg-ox text-paper text-[10px] font-semibold">CB</span>
+      <div class="flex items-center gap-2 text-[13px]">
+        <span class="text-mute">Cartes</span>
+        <span class="text-line-2">/</span>
+        <span class="font-medium">Café Bloom — Carte fidélité</span>
+        <span class="inline-flex items-center gap-1 ml-2 text-[10.5px] font-mono px-1.5 py-0.5 rounded bg-paper-2 text-mute border border-line">BROUILLON</span>
+      </div>
+    </div>
+
+    <div class="ml-auto flex items-center gap-2">
+      <div class="flex items-center gap-1.5 mr-3 text-[11px] text-mute">
+        <span class="w-1.5 h-1.5 rounded-full bg-moss"></span>
+        <span>Auto-enregistré · il y a 12s</span>
+      </div>
+      <button class="h-9 px-3 inline-flex items-center gap-1.5 rounded-md border border-line text-[13px] hover:bg-paper-2 transition-colors">
+        <svg viewBox="0 0 24 24" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+        Aperçu sur téléphone
+      </button>
+      <button class="h-9 px-3 inline-flex items-center gap-1.5 rounded-md border border-line text-[13px] hover:bg-paper-2 transition-colors">
+        <svg viewBox="0 0 24 24" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20 6L9 17l-5-5"/></svg>
+        Tester
+      </button>
+      <button class="h-9 px-5 inline-flex items-center gap-1.5 rounded-md bg-ink text-paper text-[13px] font-medium hover:bg-ink-soft transition-colors">
+        Publier la carte
+        <svg viewBox="0 0 24 24" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- Step tabs -->
+  <div class="px-6 flex items-center gap-1 border-t border-line">
+    <div class="tab active">
+      <span class="font-mono text-[10.5px] text-mute mr-2">01</span>
+      Type
+    </div>
+    <div class="tab">
+      <span class="font-mono text-[10.5px] text-mute mr-2">02</span>
+      Design
+    </div>
+    <div class="tab">
+      <span class="font-mono text-[10.5px] text-mute mr-2">03</span>
+      Contenu
+    </div>
+    <div class="tab">
+      <span class="font-mono text-[10.5px] text-mute mr-2">04</span>
+      Récompenses
+    </div>
+    <div class="tab">
+      <span class="font-mono text-[10.5px] text-mute mr-2">05</span>
+      Notifications
+    </div>
+    <div class="tab">
+      <span class="font-mono text-[10.5px] text-mute mr-2">06</span>
+      Diffusion
+    </div>
+  </div>
+</header>
+
+<div class="grid grid-cols-[360px_1fr_340px] min-h-[calc(100vh-96px)]">
+
+  <!-- LEFT: Design controls -->
+  <aside class="bg-paper border-r border-line overflow-y-auto scroll-soft">
+    <div class="p-6">
+      <div class="eyebrow">Étape 02 · Design</div>
+      <h2 class="text-[26px] leading-none mt-2">Dessinez la <span class="font-serif italic text-ox">carte.</span></h2>
+      <p class="text-[13px] text-mute mt-2">Couleurs, identité, visuel. La prévisualisation se met à jour instantanément.</p>
+    </div>
+
+    <!-- Template -->
+    <section class="px-6 pb-6 border-b border-line">
+      <label class="lbl">Template</label>
+      <div class="grid grid-cols-3 gap-2">
+        <button class="aspect-[3/4] rounded-lg bg-ink text-paper border-2 border-ink relative overflow-hidden text-left">
+          <div class="absolute inset-2 rounded-md border border-paper/20"></div>
+          <div class="absolute bottom-2 left-2 text-[9.5px] font-mono">TAMPONS</div>
+        </button>
+        <button class="aspect-[3/4] rounded-lg bg-ox text-paper border border-line relative overflow-hidden text-left hover:border-ink transition-colors">
+          <div class="absolute inset-2 rounded-md border border-paper/20"></div>
+          <div class="absolute bottom-2 left-2 text-[9.5px] font-mono">POINTS</div>
+        </button>
+        <button class="aspect-[3/4] rounded-lg bg-paper-3 text-ink border border-line relative overflow-hidden text-left hover:border-ink transition-colors">
+          <div class="absolute inset-2 rounded-md border border-ink/20"></div>
+          <div class="absolute bottom-2 left-2 text-[9.5px] font-mono">CASHBACK</div>
+        </button>
+        <button class="aspect-[3/4] rounded-lg bg-moss text-paper border border-line relative overflow-hidden text-left hover:border-ink transition-colors">
+          <div class="absolute inset-2 rounded-md border border-paper/20"></div>
+          <div class="absolute bottom-2 left-2 text-[9.5px] font-mono">NIVEAUX</div>
+        </button>
+        <button class="aspect-[3/4] rounded-lg bg-ox-deep text-paper border border-line relative overflow-hidden text-left hover:border-ink transition-colors">
+          <div class="absolute inset-2 rounded-md border border-paper/20"></div>
+          <div class="absolute bottom-2 left-2 text-[9.5px] font-mono">VIP</div>
+        </button>
+        <button class="aspect-[3/4] rounded-lg bg-paper-2 border border-dashed border-line-2 relative overflow-hidden hover:border-ink transition-colors grid place-items-center text-mute">
+          <span class="text-[11px]">+ Blanc</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- Colors -->
+    <section class="px-6 py-6 border-b border-line">
+      <label class="lbl">Couleur de fond</label>
+      <div class="grid grid-cols-8 gap-2 mb-4">
+        <div class="swatch active" style="background:#0E0E10"></div>
+        <div class="swatch" style="background:#9A2232"></div>
+        <div class="swatch" style="background:#6E141F"></div>
+        <div class="swatch" style="background:#2F5D3A"></div>
+        <div class="swatch" style="background:#1F3D27"></div>
+        <div class="swatch" style="background:#F2F1EC"></div>
+        <div class="swatch" style="background:#E8E6DE"></div>
+        <div class="swatch grid place-items-center" style="background:conic-gradient(#9A2232,#0E0E10,#2F5D3A,#9A2232)">
+          <svg viewBox="0 0 24 24" class="w-3 h-3 text-paper" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+        </div>
+      </div>
+
+      <label class="lbl">Couleur d'accent <span class="text-mute ml-1">— tampons, boutons</span></label>
+      <div class="grid grid-cols-8 gap-2">
+        <div class="swatch active" style="background:#9A2232"></div>
+        <div class="swatch" style="background:#B02A3E"></div>
+        <div class="swatch" style="background:#D06A7A"></div>
+        <div class="swatch" style="background:#FAFAF7"></div>
+        <div class="swatch" style="background:#2F5D3A"></div>
+        <div class="swatch" style="background:#E8B949"></div>
+        <div class="swatch" style="background:#6366F1"></div>
+        <div class="swatch grid place-items-center" style="background:conic-gradient(#9A2232,#0E0E10,#2F5D3A,#9A2232)">
+          <svg viewBox="0 0 24 24" class="w-3 h-3 text-paper" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+        </div>
+      </div>
+    </section>
+
+    <!-- Identity -->
+    <section class="px-6 py-6 border-b border-line">
+      <label class="lbl">Nom affiché</label>
+      <input type="text" value="CAFÉ BLOOM" class="inp font-mono tracking-wider uppercase"/>
+
+      <label class="lbl mt-4">Logo</label>
+      <div class="flex items-center gap-3">
+        <div class="w-14 h-14 rounded-xl bg-paper-2 border border-line grid place-items-center">
+          <svg viewBox="0 0 100 100" class="w-9 h-9" aria-hidden>
+            <circle cx="34" cy="42" r="14" fill="none" stroke="#0E0E10" stroke-width="5"/>
+            <circle cx="34" cy="44" r="3.5" fill="#0E0E10"/>
+            <circle cx="66" cy="42" r="14" fill="none" stroke="#0E0E10" stroke-width="5"/>
+            <circle cx="66" cy="44" r="3.5" fill="#0E0E10"/>
+            <path d="M 26 70 Q 50 88 74 70" fill="none" stroke="#9A2232" stroke-width="5" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div class="flex-1">
+          <button class="h-9 w-full rounded-md border border-line text-[12.5px] hover:bg-paper-2 transition-colors">Remplacer</button>
+          <div class="text-[10.5px] text-mute mt-1.5 font-mono">SVG · PNG · 512px min</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Typography bank -->
+    <section class="px-6 py-6 border-b border-line">
+      <div class="flex items-center justify-between mb-3">
+        <label class="lbl mb-0">Typographie</label>
+        <span class="text-[10px] font-mono text-mute tracking-wider">BANQUE</span>
+      </div>
+
+      <!-- Built-in fonts grid -->
+      <div class="grid grid-cols-2 gap-2" id="fontGrid">
+        <button class="font-btn active h-16 rounded-lg bg-paper border-2 border-ink px-3 text-left relative overflow-hidden" data-font="inter" data-family="'Inter Tight', sans-serif">
+          <div class="text-[11px] font-mono text-mute/70 tracking-wider leading-none">SANS</div>
+          <div class="text-[17px] font-semibold mt-1 leading-none" style="font-family:'Inter Tight',sans-serif">Inter Tight</div>
+        </button>
+        <button class="font-btn h-16 rounded-lg bg-paper border border-line px-3 text-left hover:border-ink transition-all relative overflow-hidden" data-font="instrument" data-family="'Instrument Serif', serif">
+          <div class="text-[11px] font-mono text-mute/70 tracking-wider leading-none">SERIF</div>
+          <div class="text-[18px] mt-1 leading-none italic" style="font-family:'Instrument Serif',serif">Instrument</div>
+        </button>
+        <button class="font-btn h-16 rounded-lg bg-paper border border-line px-3 text-left hover:border-ink transition-all relative overflow-hidden" data-font="mono" data-family="'JetBrains Mono', monospace">
+          <div class="text-[11px] font-mono text-mute/70 tracking-wider leading-none">MONO</div>
+          <div class="text-[13px] font-mono mt-1 leading-none">JetBrains</div>
+        </button>
+        <button class="font-btn h-16 rounded-lg bg-paper border border-line px-3 text-left hover:border-ink transition-all relative overflow-hidden" data-font="playfair" data-family="'Playfair Display', serif" data-gfont="Playfair+Display:ital@0;1">
+          <div class="text-[11px] font-mono text-mute/70 tracking-wider leading-none">DISPLAY</div>
+          <div class="text-[17px] mt-1 leading-none" style="font-family:'Playfair Display',serif">Playfair</div>
+        </button>
+        <button class="font-btn h-16 rounded-lg bg-paper border border-line px-3 text-left hover:border-ink transition-all relative overflow-hidden" data-font="dm" data-family="'DM Serif Display', serif" data-gfont="DM+Serif+Display:ital@0;1">
+          <div class="text-[11px] font-mono text-mute/70 tracking-wider leading-none">ÉDITORIAL</div>
+          <div class="text-[17px] mt-1 leading-none" style="font-family:'DM Serif Display',serif">DM Serif</div>
+        </button>
+        <button class="font-btn h-16 rounded-lg bg-paper border border-line px-3 text-left hover:border-ink transition-all relative overflow-hidden" data-font="space" data-family="'Space Grotesk', sans-serif" data-gfont="Space+Grotesk:wght@400;700">
+          <div class="text-[11px] font-mono text-mute/70 tracking-wider leading-none">GÉOMÉTRIQUE</div>
+          <div class="text-[17px] font-bold mt-1 leading-none" style="font-family:'Space Grotesk',sans-serif">Space Gr.</div>
+        </button>
+      </div>
+
+      <!-- Upload custom font -->
+      <div class="mt-4 border border-dashed border-line-2 rounded-lg p-3 hover:border-ink transition-colors" id="fontUploadZone">
+        <label class="flex items-center gap-3 cursor-pointer">
+          <input type="file" accept=".ttf,.otf,.woff,.woff2" class="hidden" id="fontUpload"/>
+          <span class="w-8 h-8 rounded-md bg-paper-3 grid place-items-center shrink-0">
+            <svg viewBox="0 0 24 24" class="w-4 h-4 text-mute" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          </span>
+          <div class="flex-1 min-w-0">
+            <div class="text-[12.5px] font-medium">Ajouter une police</div>
+            <div class="text-[10.5px] text-mute font-mono mt-0.5">.TTF · .OTF · .WOFF · .WOFF2</div>
+          </div>
+        </label>
+        <!-- Uploaded fonts appear here -->
+        <div id="uploadedFonts" class="mt-2 space-y-1.5"></div>
+      </div>
+    </section>
+
+    <!-- Reward config -->
+    <section class="px-6 py-6">
+      <label class="lbl">Mécanique de fidélité</label>
+      <div class="grid grid-cols-2 gap-2 mb-5">
+        <button class="mech-btn active relative p-3 rounded-lg border-2 border-ink bg-paper text-left transition-all" data-mech="stamps">
+          <div class="flex items-center gap-1 mb-2">
+            <span class="w-3 h-3 rounded-full bg-ink"></span>
+            <span class="w-3 h-3 rounded-full bg-ink"></span>
+            <span class="w-3 h-3 rounded-full bg-ink"></span>
+            <span class="w-3 h-3 rounded-full border border-ink/30"></span>
+          </div>
+          <div class="text-[12.5px] font-semibold">Tampons</div>
+          <div class="text-[10.5px] text-mute leading-tight mt-0.5">Ex. 8 cafés → 1 offert</div>
+        </button>
+        <button class="mech-btn relative p-3 rounded-lg border border-line bg-paper text-left hover:border-ink transition-all" data-mech="points">
+          <div class="flex items-baseline gap-1 mb-2">
+            <span class="font-display text-[16px] leading-none">1 580</span>
+            <span class="text-[9px] font-mono text-mute">PTS</span>
+          </div>
+          <div class="text-[12.5px] font-semibold">Points</div>
+          <div class="text-[10.5px] text-mute leading-tight mt-0.5">Ex. 1€ = 10 pts</div>
+        </button>
+      </div>
+
+      <!-- Stamps settings (visible by default) -->
+      <div data-mech-panel="stamps">
+        <label class="lbl">Nombre de tampons</label>
+        <div class="flex items-center gap-3">
+          <input type="range" min="5" max="15" value="8" style="--fill: 30%" class="flex-1"/>
+          <div class="w-12 h-8 grid place-items-center rounded-md bg-paper-2 border border-line font-mono text-[13px] tabular-nums">8</div>
+        </div>
+      </div>
+
+      <!-- Points settings (hidden by default) -->
+      <div data-mech-panel="points" class="hidden">
+        <label class="lbl">Conversion € → points</label>
+        <div class="flex items-center gap-2">
+          <input type="text" value="1" class="inp w-14 text-center"/>
+          <span class="text-mute text-[12px]">€ dépensé =</span>
+          <input type="text" value="10" class="inp w-14 text-center"/>
+          <span class="text-mute text-[12px]">pts</span>
+        </div>
+        <label class="lbl mt-4">Seuil pour récompense</label>
+        <div class="flex items-center gap-2">
+          <input type="text" value="500" class="inp flex-1"/>
+          <span class="text-mute text-[12px]">pts</span>
+        </div>
+      </div>
+
+      <label class="lbl mt-6">Type de récompense</label>
+      <div class="grid grid-cols-2 gap-2 mb-4">
+        <button class="reward-btn active relative px-3 py-3 rounded-lg border-2 border-ink bg-paper text-left" data-reward="gift">
+          <div class="flex items-center gap-1.5 mb-1">
+            <svg viewBox="0 0 24 24" class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="1.75"><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><line x1="12" y1="22" x2="12" y2="7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg>
+            <span class="text-[12.5px] font-semibold">Offrir</span>
+          </div>
+          <div class="text-[10.5px] text-mute leading-tight">Un produit gratuit</div>
+        </button>
+        <button class="reward-btn relative px-3 py-3 rounded-lg border border-line bg-paper text-left hover:border-ink transition-all" data-reward="discount">
+          <div class="flex items-center gap-1.5 mb-1">
+            <svg viewBox="0 0 24 24" class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="1.75"><line x1="19" y1="5" x2="5" y2="19"/><circle cx="6.5" cy="6.5" r="2.5"/><circle cx="17.5" cy="17.5" r="2.5"/></svg>
+            <span class="text-[12.5px] font-semibold">Réduction</span>
+          </div>
+          <div class="text-[10.5px] text-mute leading-tight">% sur la prochaine commande</div>
+        </button>
+      </div>
+
+      <!-- Gift settings -->
+      <div data-reward-panel="gift">
+        <label class="lbl">Description</label>
+        <input type="text" value="Un café offert" class="inp"/>
+        <label class="lbl mt-4">Coût estimé / récompense</label>
+        <div class="flex items-center gap-2">
+          <input type="text" value="2,80" class="inp flex-1"/>
+          <span class="text-mute text-[13px]">€</span>
+        </div>
+      </div>
+
+      <!-- Discount settings -->
+      <div data-reward-panel="discount" class="hidden">
+        <label class="lbl">% de réduction</label>
+        <div class="flex items-center gap-3">
+          <input type="range" min="5" max="50" value="15" style="--fill: 22%" class="flex-1"/>
+          <div class="w-14 h-8 grid place-items-center rounded-md bg-paper-2 border border-line font-mono text-[13px] tabular-nums">15%</div>
+        </div>
+        <label class="lbl mt-4">S'applique sur</label>
+        <select class="inp appearance-none" style="background-image:url('data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2212%22 height=%2212%22 fill=%22none%22 stroke=%22%236B6A66%22 stroke-width=%222%22><path d=%22M3 5l3 3 3-3%22/></svg>');background-repeat:no-repeat;background-position:right 12px center;padding-right:32px">
+          <option>La prochaine commande</option>
+          <option>Un produit spécifique</option>
+          <option>Le total TTC</option>
+        </select>
+      </div>
+    </section>
+  </aside>
+
+  <!-- CENTER: Canvas + live preview -->
+  <section class="flex-1 relative overflow-hidden bg-gradient-to-b from-paper-2 via-paper-3 to-paper-2">
+
+    <!-- Canvas toolbar -->
+    <div class="absolute top-6 left-6 right-6 z-10 flex items-center justify-between">
+      <div class="flex items-center gap-2 bg-paper rounded-lg border border-line p-1 shadow-card">
+        <button class="h-8 w-8 grid place-items-center rounded-md bg-ink text-paper text-[11px] font-mono">1x</button>
+        <button class="h-8 w-8 grid place-items-center rounded-md text-mute hover:bg-paper-2 transition-colors text-[11px] font-mono">2x</button>
+        <div class="w-px h-5 bg-line mx-1"></div>
+        <button class="h-8 px-2.5 inline-flex items-center gap-1.5 rounded-md text-mute hover:bg-paper-2 transition-colors text-[11.5px]">
+          <svg viewBox="0 0 24 24" class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+          Grille
+        </button>
+      </div>
+
+      <div class="flex items-center gap-2 bg-paper rounded-lg border border-line p-1 shadow-card">
+        <button class="h-8 px-3 inline-flex items-center gap-1.5 rounded-md bg-ink text-paper text-[11.5px] font-medium">
+          <svg viewBox="0 0 24 24" class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="5" y="2" width="14" height="20" rx="2"/><path d="M10 18h4"/></svg>
+          Wallet
+        </button>
+        <button class="h-8 px-3 inline-flex items-center gap-1.5 rounded-md text-mute hover:bg-paper-2 transition-colors text-[11.5px]">
+          <svg viewBox="0 0 24 24" class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 10h2M6 14h2"/></svg>
+          Carte physique
+        </button>
+        <button class="h-8 px-3 inline-flex items-center gap-1.5 rounded-md text-mute hover:bg-paper-2 transition-colors text-[11.5px]">
+          <svg viewBox="0 0 24 24" class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M3 10h18M7 20h10"/></svg>
+          Écran caisse
+        </button>
+      </div>
+    </div>
+
+    <!-- Canvas area -->
+    <div class="flex items-center justify-center gap-20 h-full pt-12 pb-12">
+
+      <!-- iPhone preview -->
+      <div class="relative floaty preview-stage">
+        <div class="phone-frame preview-tilt" id="cardTilt">
+          <div class="phone-screen">
+            <!-- Status bar -->
+            <div class="absolute top-3 left-0 right-0 flex items-center justify-between px-7 text-[10px] font-semibold text-ink">
+              <span>9:41</span>
+              <div class="flex items-center gap-1">
+                <svg viewBox="0 0 20 12" class="w-3.5 h-2.5"><rect x="0" y="0" width="18" height="12" rx="2" fill="none" stroke="currentColor" stroke-width="1"/><rect x="2" y="2" width="12" height="8" rx="1" fill="currentColor"/></svg>
+              </div>
+            </div>
+
+            <!-- Wallet header -->
+            <div class="text-center mb-3 mt-1">
+              <div class="eyebrow text-mute">APPLE WALLET</div>
+            </div>
+
+            <!-- The CARD -->
+            <div class="relative rounded-[20px] bg-ink text-paper p-4 shadow-phone transform-gpu">
+              <div class="flex items-start justify-between">
+                <div>
+                  <div class="text-[9.5px] font-mono tracking-[0.14em] text-paper/60 mb-1">CAFÉ BLOOM</div>
+                  <div class="font-tight font-semibold text-[17px] leading-tight">Marie Laurent</div>
+                </div>
+                <div class="w-7 h-7 rounded-md bg-paper grid place-items-center">
+                  <svg viewBox="0 0 100 100" class="w-5 h-5" aria-hidden>
+                    <circle cx="34" cy="42" r="14" fill="none" stroke="#0E0E10" stroke-width="5"/>
+                    <circle cx="34" cy="44" r="3.5" fill="#0E0E10"/>
+                    <circle cx="66" cy="42" r="14" fill="none" stroke="#0E0E10" stroke-width="5"/>
+                    <circle cx="66" cy="44" r="3.5" fill="#0E0E10"/>
+                    <path d="M 26 70 Q 50 88 74 70" fill="none" stroke="#9A2232" stroke-width="5" stroke-linecap="round"/>
+                  </svg>
+                </div>
+              </div>
+
+              <div class="mt-4 pt-4 border-t border-white/10">
+                <div class="flex items-center justify-between mb-2">
+                  <span class="text-[10px] font-mono text-paper/60 tracking-wider">FIDÉLITÉ</span>
+                  <span class="text-[10px] font-mono text-ox-soft">5 / 8</span>
+                </div>
+                <!-- 8 stamps -->
+                <div class="grid grid-cols-8 gap-1">
+                  <div class="stamp filled"><svg viewBox="0 0 20 20" class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 10l3 3 7-7"/></svg></div>
+                  <div class="stamp filled"><svg viewBox="0 0 20 20" class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 10l3 3 7-7"/></svg></div>
+                  <div class="stamp filled"><svg viewBox="0 0 20 20" class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 10l3 3 7-7"/></svg></div>
+                  <div class="stamp filled"><svg viewBox="0 0 20 20" class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 10l3 3 7-7"/></svg></div>
+                  <div class="stamp filled"><svg viewBox="0 0 20 20" class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 10l3 3 7-7"/></svg></div>
+                  <div class="stamp"></div>
+                  <div class="stamp"></div>
+                  <div class="stamp"></div>
+                </div>
+              </div>
+
+              <div class="mt-4 text-[10.5px] text-paper/70">
+                Plus que <span class="text-ox-soft font-medium">3 cafés</span> avant votre récompense
+              </div>
+
+              <!-- Scissor cut line -->
+              <div class="relative my-4 h-px bg-paper/15">
+                <span class="absolute left-0 -top-1.5 w-3 h-3 rounded-full bg-paper-2"></span>
+                <span class="absolute right-0 -top-1.5 w-3 h-3 rounded-full bg-paper-2"></span>
+              </div>
+
+              <!-- QR code -->
+              <div class="flex items-center gap-3">
+                <div class="w-14 h-14 rounded-md bg-paper p-1 grid place-items-center shrink-0">
+                  <div class="w-full h-full grid grid-cols-6 grid-rows-6 gap-[1px]">
+                    <div class="qr-dot"></div><div></div><div class="qr-dot"></div><div class="qr-dot"></div><div></div><div class="qr-dot"></div>
+                    <div></div><div class="qr-dot"></div><div class="qr-dot"></div><div></div><div class="qr-dot"></div><div></div>
+                    <div class="qr-dot"></div><div class="qr-dot"></div><div></div><div class="qr-dot"></div><div class="qr-dot"></div><div class="qr-dot"></div>
+                    <div class="qr-dot"></div><div></div><div class="qr-dot"></div><div></div><div></div><div class="qr-dot"></div>
+                    <div></div><div class="qr-dot"></div><div class="qr-dot"></div><div class="qr-dot"></div><div class="qr-dot"></div><div></div>
+                    <div class="qr-dot"></div><div></div><div></div><div class="qr-dot"></div><div></div><div class="qr-dot"></div>
+                  </div>
+                </div>
+                <div class="flex-1">
+                  <div class="text-[10px] font-mono text-paper/60">ID · FDY-4782</div>
+                  <div class="text-[10.5px] text-paper/80 mt-0.5">Scannez en caisse</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Add to wallet pill -->
+            <div class="mt-4 flex items-center justify-center">
+              <div class="text-[9.5px] font-mono text-mute">AJOUTÉ · IL Y A 6 JOURS</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Floating pill -->
+        <div class="absolute -right-8 top-32 bg-ink text-paper rounded-full px-3 py-1.5 flex items-center gap-1.5 shadow-pill text-[11px] font-medium rotate-3">
+          <span class="w-1.5 h-1.5 rounded-full bg-ox pulse-dot"></span>
+          <span>Live preview</span>
+        </div>
+      </div>
+
+      <!-- Back side / Push preview -->
+      <div class="flex flex-col gap-5">
+        <!-- Push notification preview -->
+        <div class="w-[300px]">
+          <div class="eyebrow mb-2">Aperçu push</div>
+          <div class="rounded-2xl bg-ink-soft/95 backdrop-blur-sm border border-white/10 p-4 text-paper relative">
+            <div class="flex items-start gap-3">
+              <div class="w-9 h-9 rounded-lg bg-paper grid place-items-center shrink-0">
+                <svg viewBox="0 0 100 100" class="w-6 h-6" aria-hidden>
+                  <circle cx="34" cy="42" r="14" fill="none" stroke="#0E0E10" stroke-width="5"/>
+                  <circle cx="34" cy="44" r="3.5" fill="#0E0E10"/>
+                  <circle cx="66" cy="42" r="14" fill="none" stroke="#0E0E10" stroke-width="5"/>
+                  <circle cx="66" cy="44" r="3.5" fill="#0E0E10"/>
+                  <path d="M 26 70 Q 50 88 74 70" fill="none" stroke="#9A2232" stroke-width="5" stroke-linecap="round"/>
+                </svg>
+              </div>
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center justify-between">
+                  <span class="text-[11px] font-semibold">CAFÉ BLOOM</span>
+                  <span class="text-[10px] text-paper/40 font-mono">maintenant</span>
+                </div>
+                <div class="text-[12.5px] mt-1 leading-snug">+1 tampon — plus que 3 cafés ☕</div>
+                <div class="text-[12px] text-paper/70 mt-1 leading-snug">Bravo Marie, rendez-vous vendredi ?</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Back of card -->
+        <div class="w-[300px]">
+          <div class="eyebrow mb-2">Verso de la carte</div>
+          <div class="rounded-[20px] bg-ink text-paper p-4 shadow-card">
+            <div class="text-[10px] font-mono tracking-wider text-paper/50 mb-3">COORDONNÉES</div>
+            <div class="space-y-2 text-[11.5px]">
+              <div class="flex items-start gap-2">
+                <svg viewBox="0 0 24 24" class="w-3.5 h-3.5 mt-0.5 text-paper/60" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                <span class="text-paper/80">12 rue de la Roquette, 75011 Paris</span>
+              </div>
+              <div class="flex items-start gap-2">
+                <svg viewBox="0 0 24 24" class="w-3.5 h-3.5 mt-0.5 text-paper/60" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+                <span class="text-paper/80">Lun→Sam · 7h30 — 19h30</span>
+              </div>
+              <div class="flex items-start gap-2">
+                <svg viewBox="0 0 24 24" class="w-3.5 h-3.5 mt-0.5 text-paper/60" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M22 16.92V21a1 1 0 01-1.09 1 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A1 1 0 014.11 3h4.09a1 1 0 011 .75 12.84 12.84 0 00.7 2.81 1 1 0 01-.23 1.11L8 9.12a16 16 0 006 6l1.45-1.47a1 1 0 011.11-.23 12.84 12.84 0 002.81.7 1 1 0 01.75 1z"/></svg>
+                <span class="text-paper/80">01 43 55 21 08</span>
+              </div>
+            </div>
+
+            <div class="mt-4 pt-4 border-t border-white/10">
+              <div class="text-[10px] font-mono tracking-wider text-paper/50 mb-2">MENTIONS</div>
+              <p class="text-[10.5px] text-paper/60 leading-relaxed">
+                1 tampon = 1 café/boisson achetée. Récompense valable 3 mois. Programme révisable à tout moment.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom ruler -->
+    <div class="absolute bottom-0 left-0 right-0 h-10 bg-paper/80 backdrop-blur-sm border-t border-line flex items-center justify-between px-6 text-[10.5px] font-mono text-mute">
+      <div class="flex items-center gap-4">
+        <span>CANVAS · 1024×1366</span>
+        <span class="text-line-2">·</span>
+        <span>INK #0E0E10</span>
+        <span class="text-line-2">·</span>
+        <span>ACCENT #9A2232</span>
+      </div>
+      <div class="flex items-center gap-3">
+        <span>WALLET · ROUND 20</span>
+        <span class="text-line-2">·</span>
+        <span>RATIO 3:5</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- RIGHT: Properties / Checklist -->
+  <aside class="bg-paper border-l border-line overflow-y-auto scroll-soft">
+    <!-- Checklist -->
+    <section class="p-6 border-b border-line">
+      <div class="flex items-center justify-between">
+        <div class="eyebrow">Avant publication</div>
+        <span class="font-mono text-[11px] text-ox">6 / 8</span>
+      </div>
+      <div class="mt-3 h-1 rounded-full bg-paper-3 overflow-hidden">
+        <div class="h-full bg-ink" style="width: 75%"></div>
+      </div>
+
+      <ul class="mt-5 space-y-3">
+        <li class="flex items-start gap-2.5 text-[13px]">
+          <span class="mt-0.5 w-4 h-4 rounded-full bg-ink grid place-items-center shrink-0"><svg viewBox="0 0 20 20" class="w-2.5 h-2.5 text-paper" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 10l3 3 7-7"/></svg></span>
+          <span>Logo ajouté</span>
+        </li>
+        <li class="flex items-start gap-2.5 text-[13px]">
+          <span class="mt-0.5 w-4 h-4 rounded-full bg-ink grid place-items-center shrink-0"><svg viewBox="0 0 20 20" class="w-2.5 h-2.5 text-paper" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 10l3 3 7-7"/></svg></span>
+          <span>Couleurs définies</span>
+        </li>
+        <li class="flex items-start gap-2.5 text-[13px]">
+          <span class="mt-0.5 w-4 h-4 rounded-full bg-ink grid place-items-center shrink-0"><svg viewBox="0 0 20 20" class="w-2.5 h-2.5 text-paper" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 10l3 3 7-7"/></svg></span>
+          <span>Récompense configurée</span>
+        </li>
+        <li class="flex items-start gap-2.5 text-[13px]">
+          <span class="mt-0.5 w-4 h-4 rounded-full bg-ink grid place-items-center shrink-0"><svg viewBox="0 0 20 20" class="w-2.5 h-2.5 text-paper" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 10l3 3 7-7"/></svg></span>
+          <span>Push de bienvenue activé</span>
+        </li>
+        <li class="flex items-start gap-2.5 text-[13px]">
+          <span class="mt-0.5 w-4 h-4 rounded-full bg-ink grid place-items-center shrink-0"><svg viewBox="0 0 20 20" class="w-2.5 h-2.5 text-paper" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 10l3 3 7-7"/></svg></span>
+          <span>Apple Wallet certifié</span>
+        </li>
+        <li class="flex items-start gap-2.5 text-[13px]">
+          <span class="mt-0.5 w-4 h-4 rounded-full bg-ink grid place-items-center shrink-0"><svg viewBox="0 0 20 20" class="w-2.5 h-2.5 text-paper" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 10l3 3 7-7"/></svg></span>
+          <span>Google Wallet certifié</span>
+        </li>
+        <li class="flex items-start gap-2.5 text-[13px]">
+          <span class="mt-0.5 w-4 h-4 rounded-full border-2 border-ox grid place-items-center shrink-0"></span>
+          <div>
+            <div>CGU mises à jour</div>
+            <a class="text-ox text-[11px] underline underline-offset-2 hover:no-underline">Modifier</a>
+          </div>
+        </li>
+        <li class="flex items-start gap-2.5 text-[13px]">
+          <span class="mt-0.5 w-4 h-4 rounded-full border-2 border-line-2 grid place-items-center shrink-0"></span>
+          <div class="text-mute">
+            <div>QR en caisse imprimé</div>
+            <a class="text-ink text-[11px] underline underline-offset-2 hover:no-underline">Télécharger le kit</a>
+          </div>
+        </li>
+      </ul>
+    </section>
+
+    <!-- Distribution -->
+    <section class="p-6 border-b border-line">
+      <div class="eyebrow">Diffusion</div>
+      <div class="text-[17px] font-semibold -tracking-[0.02em] mt-2 leading-tight">Où <span class="font-serif italic text-ox font-normal text-[20px]">donner ?</span></div>
+
+      <div class="mt-4 space-y-2">
+        <label class="flex items-start gap-3 p-3 rounded-lg border border-line hover:border-line-2 transition-colors cursor-pointer">
+          <input type="checkbox" checked class="mt-1 accent-ink"/>
+          <div class="flex-1">
+            <div class="text-[13px] font-medium">QR en caisse</div>
+            <div class="text-[11.5px] text-mute mt-0.5">Le client scanne, la carte s'ajoute à son Wallet en 2 clics.</div>
+          </div>
+        </label>
+        <label class="flex items-start gap-3 p-3 rounded-lg border border-line hover:border-line-2 transition-colors cursor-pointer">
+          <input type="checkbox" checked class="mt-1 accent-ink"/>
+          <div class="flex-1">
+            <div class="text-[13px] font-medium">Lien dans le footer email</div>
+            <div class="text-[11.5px] text-mute mt-0.5">Un clic depuis votre signature ou vos reçus.</div>
+          </div>
+        </label>
+        <label class="flex items-start gap-3 p-3 rounded-lg border border-line hover:border-line-2 transition-colors cursor-pointer">
+          <input type="checkbox" class="mt-1 accent-ink"/>
+          <div class="flex-1">
+            <div class="text-[13px] font-medium">Page publique fidelyoo.to/cafebloom</div>
+            <div class="text-[11.5px] text-mute mt-0.5">Partageable sur Instagram, Google Business…</div>
+          </div>
+        </label>
+        <label class="flex items-start gap-3 p-3 rounded-lg border border-line hover:border-line-2 transition-colors cursor-pointer">
+          <input type="checkbox" class="mt-1 accent-ink"/>
+          <div class="flex-1">
+            <div class="text-[13px] font-medium">NFC sticker en vitrine</div>
+            <div class="text-[11.5px] text-mute mt-0.5 flex items-center gap-1.5">
+              <span>Tap avec le téléphone pour installer.</span>
+              <span class="inline-block text-[9.5px] font-mono text-ox px-1 py-0.5 bg-ox/10 rounded">+9 €</span>
+            </div>
+          </div>
+        </label>
+      </div>
+    </section>
+
+    <!-- Wallet certif -->
+    <section class="p-6">
+      <div class="eyebrow">Wallets</div>
+      <div class="mt-3 space-y-2">
+        <div class="flex items-center justify-between p-3 rounded-lg bg-paper-2 border border-line">
+          <div class="flex items-center gap-2.5">
+            <svg viewBox="0 0 24 24" class="w-5 h-5" fill="currentColor"><path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09l.01-.01zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/></svg>
+            <div>
+              <div class="text-[13px] font-medium">Apple Wallet</div>
+              <div class="text-[11px] text-mute">Certifié · .pkpass</div>
+            </div>
+          </div>
+          <span class="text-[11px] font-mono text-moss">● OK</span>
+        </div>
+        <div class="flex items-center justify-between p-3 rounded-lg bg-paper-2 border border-line">
+          <div class="flex items-center gap-2.5">
+            <svg viewBox="0 0 24 24" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M2 10h20M7 14h4"/></svg>
+            <div>
+              <div class="text-[13px] font-medium">Google Wallet</div>
+              <div class="text-[11px] text-mute">Certifié · JWT</div>
+            </div>
+          </div>
+          <span class="text-[11px] font-mono text-moss">● OK</span>
+        </div>
+      </div>
+    </section>
+  </aside>
+</div>
+
+<script>
+  // Range fill
+  document.querySelectorAll('input[type=range]').forEach(r => {
+    const upd = () => { const pct = ((r.value - r.min) / (r.max - r.min)) * 100; r.style.setProperty('--fill', pct + '%'); };
+    r.addEventListener('input', upd); upd();
+  });
+  // Tab toggle
+  document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+    t.classList.add('active');
+  }));
+  // Swatch toggle
+  document.querySelectorAll('.swatch').forEach(s => s.addEventListener('click', () => {
+    const group = s.parentElement;
+    group.querySelectorAll('.swatch').forEach(x => x.classList.remove('active'));
+    s.classList.add('active');
+  }));
+
+  // Mechanic (stamps / points) toggle
+  document.querySelectorAll('.mech-btn').forEach(btn => btn.addEventListener('click', () => {
+    document.querySelectorAll('.mech-btn').forEach(x => {
+      x.classList.remove('active', 'border-2', 'border-ink');
+      x.classList.add('border', 'border-line');
+    });
+    btn.classList.add('active', 'border-2', 'border-ink');
+    btn.classList.remove('border', 'border-line');
+    const mech = btn.dataset.mech;
+    document.querySelectorAll('[data-mech-panel]').forEach(p => p.classList.toggle('hidden', p.dataset.mechPanel !== mech));
+  }));
+
+  // Reward (gift / discount) toggle
+  document.querySelectorAll('.reward-btn').forEach(btn => btn.addEventListener('click', () => {
+    document.querySelectorAll('.reward-btn').forEach(x => {
+      x.classList.remove('active', 'border-2', 'border-ink');
+      x.classList.add('border', 'border-line');
+    });
+    btn.classList.add('active', 'border-2', 'border-ink');
+    btn.classList.remove('border', 'border-line');
+    const r = btn.dataset.reward;
+    document.querySelectorAll('[data-reward-panel]').forEach(p => p.classList.toggle('hidden', p.dataset.rewardPanel !== r));
+  }));
+
+  // Font bank — load Google Font on demand + apply to card preview
+  const loadedGFonts = new Set();
+  function loadGFont(spec) {
+    if (!spec || loadedGFonts.has(spec)) return;
+    loadedGFonts.add(spec);
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = `https://fonts.googleapis.com/css2?family=${spec}&display=swap`;
+    document.head.appendChild(link);
+  }
+  function applyFont(family) {
+    // Apply to the card preview (name + heading elements inside phone)
+    const cardElements = document.querySelectorAll('.font-tight, .phone-screen .font-display');
+    cardElements.forEach(el => el.style.fontFamily = family);
+    // Update the live card name
+    const cardName = document.querySelector('.phone-screen .font-tight');
+    if (cardName) cardName.style.fontFamily = family;
+  }
+  document.querySelectorAll('.font-btn').forEach(btn => btn.addEventListener('click', () => {
+    document.querySelectorAll('.font-btn').forEach(x => {
+      x.classList.remove('active', 'border-2', 'border-ink');
+      x.classList.add('border', 'border-line');
+    });
+    btn.classList.add('active', 'border-2', 'border-ink');
+    btn.classList.remove('border', 'border-line');
+    if (btn.dataset.gfont) loadGFont(btn.dataset.gfont);
+    applyFont(btn.dataset.family || 'inherit');
+  }));
+
+  // Custom font upload
+  document.getElementById('fontUpload')?.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const url = URL.createObjectURL(file);
+    const name = file.name.replace(/\.[^.]+$/, '').replace(/[-_]/g, ' ');
+    const safeName = `custom-${Date.now()}`;
+    const style = document.createElement('style');
+    style.textContent = `@font-face { font-family: '${safeName}'; src: url('${url}'); }`;
+    document.head.appendChild(style);
+    // Add pill to the uploaded list
+    const container = document.getElementById('uploadedFonts');
+    const pill = document.createElement('button');
+    pill.className = 'font-btn w-full h-10 rounded-md bg-ink text-paper px-3 text-left flex items-center gap-2 border border-transparent';
+    pill.dataset.font = safeName;
+    pill.dataset.family = `'${safeName}', sans-serif`;
+    pill.innerHTML = `<svg viewBox="0 0 24 24" class="w-3 h-3 text-paper/50 shrink-0" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 12h6M9 16h6M5 2h14a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z"/></svg><span class="text-[12px] font-medium truncate" style="font-family:'${safeName}',sans-serif">${name}</span>`;
+    container.appendChild(pill);
+    // Re-register click
+    pill.addEventListener('click', () => {
+      document.querySelectorAll('.font-btn').forEach(x => {
+        x.classList.remove('active', 'border-2', 'border-ink', 'bg-ink', 'text-paper');
+        x.classList.add('border', 'border-line');
+      });
+      pill.classList.add('active', 'bg-ink', 'text-paper');
+      pill.classList.remove('border-line');
+      applyFont(pill.dataset.family);
+    });
+    pill.click();
+    e.target.value = '';
+  });
+
+  // Dynamic 3D tilt on card preview
+  (function(){
+    const el = document.getElementById('cardTilt');
+    if (!el) return;
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduce) return;
+    const max = 14; // max rotation degrees
+    let rafId = null;
+    function update(e){
+      const r = el.getBoundingClientRect();
+      const x = (e.clientX - r.left) / r.width;  // 0..1
+      const y = (e.clientY - r.top) / r.height;  // 0..1
+      const rx = (0.5 - y) * max;      // rotateX: positive when mouse up
+      const ry = (x - 0.5) * max;      // rotateY: positive when mouse right
+      el.style.transform = `rotateX(${rx.toFixed(2)}deg) rotateY(${ry.toFixed(2)}deg) translateZ(0)`;
+      el.style.setProperty('--mx', (x * 100).toFixed(1) + '%');
+      el.style.setProperty('--my', (y * 100).toFixed(1) + '%');
+    }
+    const stage = el.closest('.preview-stage');
+    stage.addEventListener('mouseenter', () => el.classList.add('hovered'));
+    stage.addEventListener('mousemove', (e) => {
+      if (rafId) cancelAnimationFrame(rafId);
+      rafId = requestAnimationFrame(() => update(e));
+    });
+    stage.addEventListener('mouseleave', () => {
+      el.classList.remove('hovered');
+      el.style.transform = 'rotateX(0) rotateY(0)';
+    });
+  })();
+</script>
+</body>
+</html>
