@@ -105,7 +105,7 @@
         <svg viewBox="0 0 24 24" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20 6L9 17l-5-5"/></svg>
         Tester
       </button>
-      <button class="h-9 px-5 inline-flex items-center gap-1.5 rounded-md bg-ink text-paper text-[13px] font-medium hover:bg-ink-soft transition-colors">
+      <button id="publishBtn" class="h-9 px-5 inline-flex items-center gap-1.5 rounded-md bg-ink text-paper text-[13px] font-medium hover:bg-ink-soft transition-colors">
         Publier la carte
         <svg viewBox="0 0 24 24" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
       </button>
@@ -215,7 +215,7 @@
     <!-- Identity -->
     <section class="px-6 py-6 border-b border-line">
       <label class="lbl">Nom affiché</label>
-      <input type="text" value="CAFÉ BLOOM" class="inp font-mono tracking-wider uppercase"/>
+      <input id="cardName" type="text" value="CAFÉ BLOOM" class="inp font-mono tracking-wider uppercase"/>
 
       <label class="lbl mt-4">Logo</label>
       <div class="flex items-center gap-3">
@@ -326,7 +326,7 @@
         <div class="flex items-center gap-2">
           <input type="text" value="1" class="inp w-14 text-center"/>
           <span class="text-mute text-[12px]">€ dépensé =</span>
-          <input type="text" value="10" class="inp w-14 text-center"/>
+          <input id="stampsRequired" type="text" value="10" class="inp w-14 text-center"/>
           <span class="text-mute text-[12px]">pts</span>
         </div>
         <label class="lbl mt-4">Seuil pour récompense</label>
@@ -357,7 +357,7 @@
       <!-- Gift settings -->
       <div data-reward-panel="gift">
         <label class="lbl">Description</label>
-        <input type="text" value="Un café offert" class="inp"/>
+        <input id="rewardDescription" type="text" value="Un café offert" class="inp"/>
         <label class="lbl mt-4">Coût estimé / récompense</label>
         <div class="flex items-center gap-2">
           <input type="text" value="2,80" class="inp flex-1"/>
@@ -844,5 +844,57 @@
     });
   })();
 </script>
+
+  <div id="cardStatus" style="position:fixed;bottom:16px;right:16px;z-index:9999;padding:10px 14px;border-radius:8px;background:#0E0E10;color:white;font-size:13px;font-weight:500;font-family:system-ui;display:none;"></div>
+  <script type="module">
+    import { supabase, getCurrentMerchant } from './js/supabase-client.js';
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) { window.location.href = 'login.html'; }
+    const merchant = await getCurrentMerchant();
+    if (!merchant) { window.location.href = 'login.html'; }
+    window.__merchant = merchant;
+    const { data: existingCard } = await supabase.from('cards').select('*').eq('merchant_id', merchant.id).order('created_at', { ascending: false }).limit(1).maybeSingle();
+    if (existingCard) {
+      window.__cardId = existingCard.id;
+      const n = document.getElementById('cardName');
+      const r = document.getElementById('rewardDescription');
+      const s = document.getElementById('stampsRequired');
+      if (n) n.value = existingCard.name || n.value;
+      if (r) r.value = existingCard.reward_description || r.value;
+      if (s) s.value = existingCard.stamps_required || s.value;
+      console.log('[Fidelyoo] Existing card loaded:', existingCard);
+    }
+    function showStatus(msg, isError = false) {
+      const el = document.getElementById('cardStatus');
+      el.textContent = msg;
+      el.style.background = isError ? '#b91c1c' : '#16a34a';
+      el.style.display = 'block';
+      setTimeout(() => { el.style.display = 'none'; }, 5000);
+    }
+    document.getElementById('publishBtn').addEventListener('click', async (e) => {
+      e.preventDefault();
+      const name = document.getElementById('cardName').value.trim();
+      const reward = document.getElementById('rewardDescription').value.trim();
+      const stamps = parseInt(document.getElementById('stampsRequired').value, 10) || 10;
+      if (!name || !reward) { showStatus('Nom et récompense requis', true); return; }
+      const payload = { merchant_id: merchant.id, name, reward_description: reward, stamps_required: stamps, is_published: true };
+      try {
+        let result;
+        if (window.__cardId) {
+          result = await supabase.from('cards').update(payload).eq('id', window.__cardId).select().single();
+        } else {
+          result = await supabase.from('cards').insert(payload).select().single();
+        }
+        if (result.error) throw result.error;
+        window.__cardId = result.data.id;
+        const publicUrl = window.location.origin + '/fidelyoo/card.html?m=' + merchant.slug;
+        showStatus('Carte publiée: ' + publicUrl);
+        console.log('[Fidelyoo] Card saved:', result.data);
+      } catch (err) {
+        console.error(err);
+        showStatus('Erreur: ' + (err.message || 'inconnue'), true);
+      }
+    });
+  </script>
 </body>
 </html>
