@@ -1,0 +1,360 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Fidelyoo — Aperçu</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter+Tight:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="tailwind.config.js"></script>
+<script>tailwind.config = window.fidelyooTailwindConfig;</script>
+<style>
+  html, body { height: 100%; }
+  body { font-family: 'Inter Tight', ui-sans-serif, system-ui, sans-serif; -webkit-font-smoothing: antialiased; color: #0E0E10; background: #FAFAF7; }
+  .font-serif { font-family: 'Instrument Serif', 'Times New Roman', serif; letter-spacing: -0.02em; }
+  .font-display { font-family: 'Inter Tight', sans-serif; font-weight: 800; letter-spacing: -0.05em; }
+  .font-tight { font-family: 'Inter Tight', sans-serif; letter-spacing: -0.02em; }
+  .font-mono { font-family: 'JetBrains Mono', ui-monospace, monospace; letter-spacing: 0.02em; }
+  .eyebrow { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: #A29F97; }
+  .tabular-nums { font-variant-numeric: tabular-nums; }
+
+  /* Sidebar nav */
+  .nav-link { display: flex; align-items: center; gap: 10px; padding: 9px 10px; border-radius: 8px; color: rgba(250,250,247,0.62); font-size: 13px; transition: all .15s; }
+  .nav-link:hover { color: #FAFAF7; background: rgba(250,250,247,0.04); }
+  .nav-link.active { color: #FAFAF7; background: rgba(250,250,247,0.08); }
+  .nav-link svg { width: 16px; height: 16px; flex-shrink: 0; }
+
+  /* Chart */
+  .chart-line { stroke: #9A2232; stroke-width: 2; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+  .chart-fill { fill: url(#chart-grad); opacity: 0.9; }
+  .chart-grid line { stroke: rgba(14,14,16,0.06); stroke-dasharray: 2 4; }
+
+  /* Animated pulse */
+  @keyframes pulse-dot { 0%,100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.5; transform: scale(0.85); } }
+  .pulse-dot { animation: pulse-dot 1.8s ease-in-out infinite; }
+
+  /* Reveal */
+  .reveal { opacity: 0; transform: translateY(14px); transition: opacity .7s cubic-bezier(.16,1,.3,1), transform .7s cubic-bezier(.16,1,.3,1); }
+  .reveal.in { opacity: 1; transform: none; }
+  @media (prefers-reduced-motion: reduce) { .reveal { opacity:1; transform:none; transition:none; } }
+
+  /* Cards */
+  .card { background: #FFFFFF; border: 1px solid rgba(14,14,16,0.08); border-radius: 14px; }
+  .card-paper { background: #F2F1EC; border: 1px solid rgba(14,14,16,0.06); border-radius: 14px; }
+
+  /* Scrollbar */
+  .scroll-soft::-webkit-scrollbar { width: 6px; }
+  .scroll-soft::-webkit-scrollbar-thumb { background: rgba(14,14,16,0.15); border-radius: 9999px; }
+</style>
+</head>
+<body class="antialiased">
+<div class="flex min-h-screen">
+<aside class="w-[260px] shrink-0 bg-ink text-paper flex flex-col h-screen sticky top-0">
+    <!-- Brand -->
+    <div class="px-5 pt-5 pb-6 border-b border-white/5">
+      <a href="index.html" class="flex items-center gap-2.5">
+        <span class="grid place-items-center w-7 h-7 rounded-md bg-paper">
+          <svg viewBox="0 0 100 100" class="w-5 h-5" aria-hidden>
+            <circle cx="34" cy="42" r="14" fill="none" stroke="#0E0E10" stroke-width="5"/>
+            <circle cx="34" cy="44" r="3.5" fill="#0E0E10"/>
+            <circle cx="66" cy="42" r="14" fill="none" stroke="#0E0E10" stroke-width="5"/>
+            <circle cx="66" cy="44" r="3.5" fill="#0E0E10"/>
+            <path d="M 26 70 Q 50 88 74 70" fill="none" stroke="#9A2232" stroke-width="5" stroke-linecap="round"/>
+          </svg>
+        </span>
+        <span class="font-semibold text-[17px] -tracking-[0.03em]">Fidely<span class="relative">oo<svg class="absolute -bottom-0.5 left-0 right-0 w-full h-1.5" viewBox="0 0 40 12" preserveAspectRatio="none"><path d="M 2 2 Q 20 12 38 2" fill="none" stroke="#9A2232" stroke-width="2" stroke-linecap="round"/></svg></span></span>
+      </a>
+
+      <!-- Workspace switcher -->
+      <button class="mt-5 w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg border border-white/10 hover:border-white/20 transition-colors">
+        <span id="sb-merchant-initials" class="grid place-items-center w-7 h-7 rounded-md bg-ox text-paper font-semibold text-[12px]">--</span>
+        <span class="flex-1 text-left">
+          <span id="sb-merchant-name" class="block text-[13px] font-medium leading-tight">Chargement…</span>
+          <span id="sb-shops-count" class="block text-[10.5px] text-paper/50 leading-tight">1 boutique</span>
+        </span>
+        <svg viewBox="0 0 20 20" class="w-3.5 h-3.5 text-paper/50"><path d="M5 7l5 5 5-5" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>
+      </button>
+    </div>
+
+    <!-- Nav -->
+    <nav class="flex-1 px-3 pt-4 space-y-0.5 overflow-y-auto scroll-soft">
+      <div class="eyebrow px-2.5 pt-1 pb-2 text-paper/40">Pilotage</div>
+      <a href="app.html" class="nav-link">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>
+        Aperçu
+      </a>
+      <a href="clients.html" class="nav-link active">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+        Clients
+        <span id="sb-clients-count" class="ml-auto text-[10.5px] font-mono text-paper/50">0</span>
+      </a>
+      <a href="#" class="nav-link">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 11l18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 11-5.8-1.6"/></svg>
+        Campagnes
+      </a>
+      <a href="card-editor.html" class="nav-link">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
+        Cartes
+        <span class="ml-auto inline-block w-1.5 h-1.5 rounded-full bg-ox pulse-dot"></span>
+      </a>
+      <a href="#" class="nav-link">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 11-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 110-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 114 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 110 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+        Automatisations
+      </a>
+      <a href="#" class="nav-link">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 3v18h18"/><path d="M7 14l4-4 4 4 6-6"/></svg>
+        Statistiques
+      </a>
+
+      <div class="eyebrow px-2.5 pt-6 pb-2 text-paper/40">Contenu</div>
+      <a href="#" class="nav-link">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2v10z"/></svg>
+        Notifications push
+      </a>
+      <a href="#" class="nav-link">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><path d="M22 4L12 14.01l-3-3"/></svg>
+        Avis Google
+        <span id="sb-google-rating" class="ml-auto text-[10.5px] font-mono text-ox">--</span>
+      </a>
+      <a href="#" class="nav-link">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        Équipe
+      </a>
+      <a href="#" class="nav-link">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+        Boutiques
+        <span id="sb-shops-count-nav" class="ml-auto text-[10.5px] font-mono text-paper/50">1</span>
+      </a>
+
+      <div class="eyebrow px-2.5 pt-6 pb-2 text-paper/40">Compte</div>
+      <a href="#" class="nav-link">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+        Intégrations
+      </a>
+      <a href="#" class="nav-link">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="4" width="22" height="16" rx="2"/><path d="M1 10h22"/></svg>
+        Facturation
+      </a>
+      <a href="#" class="nav-link">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3M12 17h.01"/></svg>
+        Aide
+      </a>
+    </nav>
+
+    <!-- Bottom -->
+    <div class="p-3 border-t border-white/5">
+      <div class="flex items-center gap-2.5 px-2 py-2 rounded-lg hover:bg-white/5 transition-colors cursor-pointer">
+        <div id="sb-user-initials" class="w-8 h-8 rounded-full bg-paper-2 grid place-items-center text-ink font-semibold text-[12px]">--</div>
+        <div class="flex-1 min-w-0">
+          <div id="sb-user-name" class="text-[13px] font-medium truncate">Chargement…</div>
+          <div id="sb-user-email" class="text-[10.5px] text-paper/50 truncate">--</div>
+        </div>
+        <svg viewBox="0 0 20 20" class="w-3.5 h-3.5 text-paper/50"><path d="M7 5l-3 5 3 5M13 5l3 5-3 5" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>
+      </div>
+    </div>
+  </aside>
+
+<main class="flex-1 min-w-0">
+  <header class="sticky top-0 z-30 bg-paper/85 backdrop-blur-md border-b border-line">
+    <div class="h-14 px-8 flex items-center gap-4">
+      <div class="flex items-center gap-2 text-[13px] text-mute">
+        <span id="tb-merchant-name">Chargement…</span>
+        <span class="text-line-2">/</span>
+        <span class="text-ink font-medium">Clients</span>
+      </div>
+      <div class="ml-auto flex items-center gap-2">
+        <div class="relative">
+          <svg viewBox="0 0 24 24" class="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-mute" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+          <input id="search-input" type="text" placeholder="Rechercher..." class="h-9 w-[320px] pl-9 pr-3 rounded-md bg-paper-2 border border-line text-[13px] placeholder:text-mute focus:outline-none focus:border-ink transition-colors"/>
+        </div>
+        <button id="export-csv" class="h-9 px-3 inline-flex items-center gap-1.5 rounded-md border border-line text-[13px] hover:bg-paper-2 transition-colors">Export CSV</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="px-8 pt-10 pb-20 max-w-[1280px]">
+    <div class="reveal">
+      <div class="eyebrow">Tous les clients</div>
+      <h1 class="leading-[0.95] mt-3 max-w-[860px]">
+        <span id="hero-count" class="font-display text-[56px] -tracking-[0.05em] block">— clients</span>
+        <span class="font-serif italic text-[44px] text-ox -tracking-[0.03em] block mt-1">au total.</span>
+      </h1>
+      <p class="mt-5 text-[15px] text-mute max-w-[600px]">Cliquez sur un client pour voir son historique, ajouter un tampon manuel ou consulter ses récompenses.</p>
+    </div>
+
+    <div class="card mt-10 overflow-hidden">
+      <table class="w-full text-[13px]">
+        <thead>
+          <tr class="border-b border-line text-left text-mute eyebrow">
+            <th class="px-5 py-3 font-normal">Nom</th>
+            <th class="px-5 py-3 font-normal">Email</th>
+            <th class="px-5 py-3 font-normal">Carte</th>
+            <th class="px-5 py-3 font-normal">Tampons</th>
+            <th class="px-5 py-3 font-normal">Inscrit le</th>
+            <th class="px-5 py-3 font-normal"></th>
+          </tr>
+        </thead>
+        <tbody id="clients-tbody">
+          <tr><td colspan="6" class="px-5 py-8 text-center text-mute">Chargement...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</main>
+</div>
+
+<div id="client-modal" class="fixed inset-0 z-50 hidden bg-ink/40 backdrop-blur-sm items-center justify-center p-6">
+  <div class="card max-w-2xl w-full max-h-[85vh] overflow-y-auto p-6">
+    <div class="flex items-start justify-between mb-4">
+      <div>
+        <div class="eyebrow">Fiche client</div>
+        <h2 id="modal-name" class="font-display text-[28px] mt-1">—</h2>
+        <div id="modal-email" class="text-[13px] text-mute"></div>
+        <div id="modal-phone" class="text-[13px] text-mute"></div>
+      </div>
+      <button id="modal-close" class="text-mute hover:text-ink text-2xl leading-none">×</button>
+    </div>
+    <div class="grid grid-cols-3 gap-3 mt-4">
+      <div class="p-3 rounded-md bg-paper-2 border border-line"><div class="eyebrow">Tampons</div><div id="modal-stamps" class="font-display text-[28px] mt-1">0</div></div>
+      <div class="p-3 rounded-md bg-paper-2 border border-line"><div class="eyebrow">Récompenses</div><div id="modal-rewards" class="font-display text-[28px] mt-1">0</div></div>
+      <div class="p-3 rounded-md bg-paper-2 border border-line"><div class="eyebrow">Carte</div><div id="modal-card" class="font-medium mt-1 text-[13px]">—</div></div>
+    </div>
+    <div class="mt-5 flex flex-wrap gap-2">
+      <button id="btn-add-stamp" class="h-9 px-4 inline-flex items-center gap-1.5 rounded-md bg-ink text-paper text-[13px] font-medium hover:bg-ink-soft transition-colors">+1 tampon</button>
+      <button id="btn-redeem" class="h-9 px-4 inline-flex items-center gap-1.5 rounded-md border border-line text-[13px] hover:bg-paper-2 transition-colors">Récompense utilisée</button>
+      <a id="btn-view-card" target="_blank" class="h-9 px-4 inline-flex items-center gap-1.5 rounded-md border border-line text-[13px] hover:bg-paper-2 transition-colors">Voir la carte</a>
+    </div>
+    <div class="mt-5">
+      <div class="eyebrow mb-2">Historique</div>
+      <div id="modal-history" class="space-y-1.5 text-[13px]"></div>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import { supabase } from './js/supabase-client.js';
+
+(async () => {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) { location.href = './login.html'; return; }
+  const user = session.user;
+  const { data: merchant } = await supabase.from('merchants').select('*').eq('user_id', user.id).single();
+  if (!merchant) return;
+  const { data: stats } = await supabase.from('merchant_stats').select('*').eq('merchant_id', merchant.id).single();
+  const { count: shopsCount } = await supabase.from('shops').select('*', { count: 'exact', head: true }).eq('merchant_id', merchant.id);
+  const { data: gb } = await supabase.from('google_business').select('*').eq('merchant_id', merchant.id).maybeSingle();
+  const initials = (n) => (n||'').split(/\s+/).map(w=>w[0]||'').join('').slice(0,2).toUpperCase()||'--';
+  const setText = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+  setText('sb-merchant-initials', initials(merchant.business_name));
+  setText('sb-merchant-name', merchant.business_name);
+  setText('sb-shops-count', (shopsCount||1) + (shopsCount > 1 ? ' boutiques' : ' boutique'));
+  setText('sb-shops-count-nav', String(shopsCount||1));
+  setText('sb-clients-count', (stats?.customers_count||0).toLocaleString('fr-FR'));
+  setText('sb-google-rating', gb?.rating ? gb.rating.toFixed(1) : '—');
+  setText('sb-user-initials', initials(user.email));
+  setText('sb-user-name', user.email.split('@')[0]);
+  setText('sb-user-email', user.email);
+  setText('tb-merchant-name', merchant.business_name);
+
+  const { data: customers } = await supabase.from('customers').select('*, cards(name, reward_description, stamps_required)').eq('merchant_id', merchant.id).order('created_at', {ascending: false});
+  const { data: stampsAgg } = await supabase.from('stamps').select('customer_id, stamps_count').eq('merchant_id', merchant.id);
+  const stampsByCustomer = {};
+  (stampsAgg||[]).forEach(s => { stampsByCustomer[s.customer_id] = (stampsByCustomer[s.customer_id]||0) + (s.stamps_count||1); });
+  const { data: rewardsAgg } = await supabase.from('rewards').select('customer_id').eq('merchant_id', merchant.id);
+  const rewardsByCustomer = {};
+  (rewardsAgg||[]).forEach(r => { rewardsByCustomer[r.customer_id] = (rewardsByCustomer[r.customer_id]||0) + 1; });
+
+  document.getElementById('hero-count').textContent = (customers?.length||0) + ' client' + ((customers?.length||0)>1?'s':'');
+
+  const tbody = document.getElementById('clients-tbody');
+  function render(list) {
+    if (!list.length) { tbody.innerHTML = '<tr><td colspan="6" class="px-5 py-8 text-center text-mute">Aucun client. Partagez votre carte pour les recevoir !</td></tr>'; return; }
+    tbody.innerHTML = list.map(c => {
+      const fullName = ((c.first_name||'')+' '+(c.last_name||'')).trim() || '—';
+      const stamps = stampsByCustomer[c.id]||0;
+      const rew = rewardsByCustomer[c.id]||0;
+      const date = new Date(c.created_at).toLocaleDateString('fr-FR');
+      const cardName = c.cards?.name || '—';
+      return '<tr class="border-b border-line/60 hover:bg-paper-2 cursor-pointer" data-id="'+c.id+'">'+
+        '<td class="px-5 py-3 font-medium">'+fullName+'</td>'+
+        '<td class="px-5 py-3 text-mute">'+(c.email||'')+'</td>'+
+        '<td class="px-5 py-3 text-mute">'+cardName+'</td>'+
+        '<td class="px-5 py-3 font-mono">'+stamps+(c.cards?.stamps_required?'/'+c.cards.stamps_required:'')+(rew>0?' · '+rew+'⭐':'')+'</td>'+
+        '<td class="px-5 py-3 text-mute">'+date+'</td>'+
+        '<td class="px-5 py-3 text-right"><span class="text-mute">›</span></td>'+
+        '</tr>';
+    }).join('');
+    tbody.querySelectorAll('tr[data-id]').forEach(tr => tr.addEventListener('click', () => openModal(tr.dataset.id)));
+  }
+  render(customers||[]);
+
+  document.getElementById('search-input').addEventListener('input', e => {
+    const q = e.target.value.toLowerCase().trim();
+    if (!q) return render(customers||[]);
+    render((customers||[]).filter(c => (c.first_name||'').toLowerCase().includes(q) || (c.last_name||'').toLowerCase().includes(q) || (c.email||'').toLowerCase().includes(q) || (c.phone||'').toLowerCase().includes(q)));
+  });
+
+  document.getElementById('export-csv').addEventListener('click', () => {
+    const rows = [['Prenom','Nom','Email','Telephone','Carte','Tampons','Inscrit le']];
+    (customers||[]).forEach(c => rows.push([c.first_name||'', c.last_name||'', c.email||'', c.phone||'', c.cards?.name||'', stampsByCustomer[c.id]||0, new Date(c.created_at).toLocaleDateString('fr-FR')]));
+    const csv = rows.map(r => r.map(v => '"'+String(v).replace(/"/g,'""')+'"').join(',')).join('\n');
+    const blob = new Blob([csv], {type: 'text/csv;charset=utf-8;'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'clients-'+new Date().toISOString().slice(0,10)+'.csv';
+    a.click(); URL.revokeObjectURL(url);
+  });
+
+  let currentCustomer = null;
+  async function openModal(id) {
+    currentCustomer = (customers||[]).find(c => c.id === id);
+    if (!currentCustomer) return;
+    const c = currentCustomer;
+    setText('modal-name', ((c.first_name||'')+' '+(c.last_name||'')).trim() || '—');
+    setText('modal-email', c.email||'');
+    setText('modal-phone', c.phone||'');
+    setText('modal-stamps', (stampsByCustomer[c.id]||0) + (c.cards?.stamps_required?' / '+c.cards.stamps_required:''));
+    setText('modal-rewards', String(rewardsByCustomer[c.id]||0));
+    setText('modal-card', c.cards?.name||'—');
+    document.getElementById('btn-view-card').href = './card.html?m='+merchant.slug+'&c='+c.qr_code;
+    const { data: hist } = await supabase.from('stamps').select('*').eq('customer_id', c.id).order('created_at', {ascending: false}).limit(20);
+    const { data: rewHist } = await supabase.from('rewards').select('*').eq('customer_id', c.id).order('redeemed_at', {ascending: false}).limit(10);
+    const histDiv = document.getElementById('modal-history');
+    const items = [];
+    (hist||[]).forEach(h => items.push({when: h.created_at, txt: '+'+(h.stamps_count||1)+' tampon'+((h.stamps_count||1)>1?'s':'')+(h.note?' — '+h.note:''), icon: '●'}));
+    (rewHist||[]).forEach(r => items.push({when: r.redeemed_at, txt: 'Récompense utilisée', icon: '★'}));
+    items.sort((a,b) => new Date(b.when) - new Date(a.when));
+    histDiv.innerHTML = items.length ? items.map(i => '<div class="flex items-start gap-2"><span class="text-ox">'+i.icon+'</span><span class="flex-1">'+i.txt+'</span><span class="text-mute text-[11px]">'+new Date(i.when).toLocaleString('fr-FR')+'</span></div>').join('') : '<div class="text-mute italic">Aucune activité.</div>';
+    const m = document.getElementById('client-modal');
+    m.classList.remove('hidden');
+    m.classList.add('flex');
+  }
+
+  document.getElementById('modal-close').addEventListener('click', () => {
+    const m = document.getElementById('client-modal'); m.classList.add('hidden'); m.classList.remove('flex');
+  });
+
+  document.getElementById('btn-add-stamp').addEventListener('click', async () => {
+    if (!currentCustomer) return;
+    const { error } = await supabase.from('stamps').insert({customer_id: currentCustomer.id, merchant_id: merchant.id, stamps_count: 1, note: 'manuel'});
+    if (error) { alert('Erreur: '+error.message); return; }
+    stampsByCustomer[currentCustomer.id] = (stampsByCustomer[currentCustomer.id]||0)+1;
+    openModal(currentCustomer.id);
+    render(customers||[]);
+  });
+
+  document.getElementById('btn-redeem').addEventListener('click', async () => {
+    if (!currentCustomer) return;
+    if (!confirm('Marquer une récompense comme utilisée ?')) return;
+    const { error } = await supabase.from('rewards').insert({customer_id: currentCustomer.id, merchant_id: merchant.id});
+    if (error) { alert('Erreur: '+error.message); return; }
+    rewardsByCustomer[currentCustomer.id] = (rewardsByCustomer[currentCustomer.id]||0)+1;
+    openModal(currentCustomer.id);
+    render(customers||[]);
+  });
+})();
+</script>
+</body>
+</html>
