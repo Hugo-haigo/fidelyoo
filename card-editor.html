@@ -434,10 +434,10 @@
             </div>
 
             <!-- The CARD -->
-            <div class="relative rounded-[20px] bg-ink text-paper p-4 shadow-phone transform-gpu">
+            <div id="previewCard" class="relative rounded-[20px] bg-ink text-paper p-4 shadow-phone transform-gpu">
               <div class="flex items-start justify-between">
                 <div>
-                  <div class="text-[9.5px] font-mono tracking-[0.14em] text-paper/60 mb-1">CAFÉ BLOOM</div>
+                  <div class="text-[9.5px] font-mono tracking-[0.14em] text-paper/60 mb-1" data-preview="name">CAFÉ BLOOM</div>
                   <div class="font-tight font-semibold text-[17px] leading-tight">Marie Laurent</div>
                 </div>
                 <div class="w-7 h-7 rounded-md bg-paper grid place-items-center">
@@ -880,6 +880,7 @@
   }
 
   const $ = (id) => document.getElementById(id);
+
   function getContrastText(hex) {
     const h = (hex || '#000').replace('#','');
     const r = parseInt(h.substring(0,2),16) || 0;
@@ -887,6 +888,13 @@
     const b = parseInt(h.substring(4,6),16) || 0;
     const luma = (0.299*r + 0.587*g + 0.114*b) / 255;
     return luma > 0.6 ? '#0E0E10' : '#FFFFFF';
+  }
+  function withAlpha(hex, a) {
+    const h = (hex || '#000').replace('#','');
+    const r = parseInt(h.substring(0,2),16) || 0;
+    const g = parseInt(h.substring(2,4),16) || 0;
+    const b = parseInt(h.substring(4,6),16) || 0;
+    return 'rgba(' + r + ',' + g + ',' + b + ',' + a + ')';
   }
 
   function applyToInputs() {
@@ -896,29 +904,53 @@
   }
 
   function updatePreview() {
+    const card = $('previewCard');
+    if (!card) return;
     const txt = state.text_color || getContrastText(state.bg_color);
-    document.documentElement.style.setProperty('--card-bg', state.bg_color);
-    document.documentElement.style.setProperty('--card-accent', state.accent_color);
-    document.documentElement.style.setProperty('--card-text', txt);
-    const tilt = $('cardTilt');
-    if (tilt) {
-      tilt.style.background = state.bg_color;
-      tilt.style.color = txt;
-    }
-    document.querySelectorAll('#cardTilt *').forEach(el => {
-      const cs = getComputedStyle(el);
-      if (cs.color && cs.color !== 'rgba(0, 0, 0, 0)') el.style.color = txt;
+
+    // Override Tailwind bg/color classes by setting inline styles directly
+    card.style.background = state.bg_color;
+    card.style.color = txt;
+
+    // Border between header and stamps zone
+    card.querySelectorAll('.border-t').forEach(el => {
+      el.style.borderTopColor = withAlpha(txt, 0.10);
     });
-    document.querySelectorAll('.stamp.filled, .stamp-filled, [data-stamp="filled"]').forEach(el => {
+
+    // Soft labels (text-paper/60 etc.) — set color with reduced alpha
+    card.querySelectorAll('[class*="text-paper/60"], [class*="text-paper/70"], [class*="text-paper/80"]').forEach(el => {
+      el.style.color = withAlpha(txt, 0.65);
+    });
+    // Plain text-paper labels
+    card.querySelectorAll('.text-paper, .font-tight, .font-mono').forEach(el => {
+      // only override if currently uses text-paper
+      if (el.className.includes('text-paper') && !el.className.includes('text-paper/')) {
+        el.style.color = txt;
+      }
+    });
+
+    // Accent: counter "5 / 8", filled stamps
+    card.querySelectorAll('.text-ox-soft, .text-ox').forEach(el => {
+      el.style.color = state.accent_color;
+    });
+    card.querySelectorAll('.stamp.filled').forEach(el => {
       el.style.background = state.accent_color;
       el.style.borderColor = state.accent_color;
+      el.style.color = txt;
     });
-    document.querySelectorAll('.text-ox, .bg-ox').forEach(el => {
-      if (el.classList.contains('bg-ox')) el.style.background = state.accent_color;
-      if (el.classList.contains('text-ox')) el.style.color = state.accent_color;
+    card.querySelectorAll('.stamp:not(.filled)').forEach(el => {
+      el.style.borderColor = withAlpha(txt, 0.20);
     });
-    document.querySelectorAll('[data-preview="name"]').forEach(el => el.textContent = state.name);
-    document.querySelectorAll('[data-preview="reward"]').forEach(el => el.textContent = state.reward_description);
+
+    // Logo placeholder small box
+    card.querySelectorAll('.bg-paper').forEach(el => {
+      el.style.background = txt;
+      el.style.color = state.bg_color;
+    });
+
+    // Update text content
+    card.querySelectorAll('[data-preview="name"]').forEach(el => el.textContent = state.name);
+    card.querySelectorAll('[data-preview="reward"]').forEach(el => el.textContent = state.reward_description);
   }
 
   function wireSwatches() {
