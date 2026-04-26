@@ -380,6 +380,29 @@
         </select>
       </div>
     </section>
+
+    <!-- Notifications -->
+    <section class="px-6 py-6 border-t border-line">
+      <label class="lbl">Notifications push</label>
+      <p class="text-[12px] text-mute mb-3 leading-relaxed">Personnalisez le ton des messages envoyés à vos clients.</p>
+
+      <label class="lbl mt-2">Titre par défaut</label>
+      <input id="notifTitle" type="text" placeholder="Café Bloom — Une attention pour vous" class="inp"/>
+
+      <label class="lbl mt-3">Message exemple</label>
+      <textarea id="notifBody" rows="3" placeholder="Marie, votre 9e tampon vous attend ☕" class="inp" style="resize:vertical;font-family:inherit"></textarea>
+
+      <label class="lbl mt-3">Ton de communication</label>
+      <select id="notifTone" class="inp">
+        <option value="warm">Chaleureux & personnel</option>
+        <option value="formal">Soigné & professionnel</option>
+        <option value="playful">Décontracté & ludique</option>
+      </select>
+
+      <label class="lbl mt-3">Signature</label>
+      <input id="notifSignature" type="text" placeholder="L'équipe Café Bloom" class="inp"/>
+    </section>
+  
   </aside>
 
   <!-- CENTER: Canvas + live preview -->
@@ -543,7 +566,7 @@
         <!-- Back of card -->
         <div class="w-[300px]">
           <div class="eyebrow mb-2">Verso de la carte</div>
-          <div class="rounded-[20px] bg-ink text-paper p-4 shadow-card">
+          <div id="previewVerso" class="rounded-[20px] bg-ink text-paper p-4 shadow-card">
             <div class="text-[10px] font-mono tracking-wider text-paper/50 mb-3">COORDONNÉES</div>
             <div class="space-y-2 text-[11.5px]">
               <div class="flex items-start gap-2">
@@ -863,7 +886,11 @@
     accent_color: '#9A2232',
     text_color: '#FFFFFF',
     logo_url: null,
-    font_family: 'Inter Tight'
+    font_family: 'Inter Tight',
+    notif_title: '',
+    notif_body: '',
+    notif_tone: 'warm',
+    notif_signature: ''
   };
 
   const { data: existingCard } = await supabase.from('cards').select('*').eq('merchant_id', merchant.id).order('created_at', { ascending: false }).limit(1).maybeSingle();
@@ -877,6 +904,10 @@
     state.text_color = existingCard.text_color || state.text_color;
     state.logo_url = existingCard.logo_url || null;
     state.font_family = existingCard.font_family || state.font_family;
+    state.notif_title = existingCard.notif_title || '';
+    state.notif_body = existingCard.notif_body || '';
+    state.notif_tone = existingCard.notif_tone || 'warm';
+    state.notif_signature = existingCard.notif_signature || '';
   }
 
   const $ = (id) => document.getElementById(id);
@@ -901,56 +932,67 @@
     if ($('cardName')) $('cardName').value = state.name;
     if ($('rewardDescription')) $('rewardDescription').value = state.reward_description;
     if ($('stampsRequired')) $('stampsRequired').value = state.stamps_required;
+    if ($('notifTitle')) $('notifTitle').value = state.notif_title;
+    if ($('notifBody')) $('notifBody').value = state.notif_body;
+    if ($('notifTone')) $('notifTone').value = state.notif_tone;
+    if ($('notifSignature')) $('notifSignature').value = state.notif_signature;
   }
 
-  function updatePreview() {
-    const card = $('previewCard');
-    if (!card) return;
+  // Apply BACKGROUND + TEXT only (not accent) to a single card element
+  function applyBgToCard(cardEl) {
+    if (!cardEl) return;
     const txt = state.text_color || getContrastText(state.bg_color);
-
-    // Override Tailwind bg/color classes by setting inline styles directly
-    card.style.background = state.bg_color;
-    card.style.color = txt;
-
-    // Border between header and stamps zone
-    card.querySelectorAll('.border-t').forEach(el => {
+    cardEl.style.background = state.bg_color;
+    cardEl.style.color = txt;
+    // Borders and dividers
+    cardEl.querySelectorAll('.border-t, .border-b, [class*="border-white"], [class*="border-paper"]').forEach(el => {
       el.style.borderTopColor = withAlpha(txt, 0.10);
+      el.style.borderBottomColor = withAlpha(txt, 0.10);
+      el.style.borderColor = withAlpha(txt, 0.10);
     });
-
-    // Soft labels (text-paper/60 etc.) — set color with reduced alpha
-    card.querySelectorAll('[class*="text-paper/60"], [class*="text-paper/70"], [class*="text-paper/80"]').forEach(el => {
+    // Soft / opacity text
+    cardEl.querySelectorAll('[class*="text-paper/"]').forEach(el => {
       el.style.color = withAlpha(txt, 0.65);
     });
-    // Plain text-paper labels
-    card.querySelectorAll('.text-paper, .font-tight, .font-mono').forEach(el => {
-      // only override if currently uses text-paper
-      if (el.className.includes('text-paper') && !el.className.includes('text-paper/')) {
+    // Plain text-paper
+    cardEl.querySelectorAll('[class*="text-paper"]').forEach(el => {
+      const cls = el.className || '';
+      if (typeof cls === 'string' && cls.includes('text-paper') && !cls.includes('text-paper/')) {
         el.style.color = txt;
       }
     });
-
-    // Accent: counter "5 / 8", filled stamps
-    card.querySelectorAll('.text-ox-soft, .text-ox').forEach(el => {
-      el.style.color = state.accent_color;
-    });
-    card.querySelectorAll('.stamp.filled').forEach(el => {
-      el.style.background = state.accent_color;
-      el.style.borderColor = state.accent_color;
-      el.style.color = txt;
-    });
-    card.querySelectorAll('.stamp:not(.filled)').forEach(el => {
-      el.style.borderColor = withAlpha(txt, 0.20);
-    });
-
-    // Logo placeholder small box
-    card.querySelectorAll('.bg-paper').forEach(el => {
+    // Logo placeholder bg-paper invert
+    cardEl.querySelectorAll('.bg-paper').forEach(el => {
       el.style.background = txt;
       el.style.color = state.bg_color;
+      el.querySelectorAll('*').forEach(c => c.style.color = state.bg_color);
     });
+  }
 
-    // Update text content
-    card.querySelectorAll('[data-preview="name"]').forEach(el => el.textContent = state.name);
-    card.querySelectorAll('[data-preview="reward"]').forEach(el => el.textContent = state.reward_description);
+  // Apply ACCENT only to stamps (filled and empty)
+  function applyAccentToCard(cardEl) {
+    if (!cardEl) return;
+    cardEl.querySelectorAll('.stamp.filled').forEach(el => {
+      el.style.background = state.accent_color;
+      el.style.borderColor = state.accent_color;
+      el.style.color = state.text_color || getContrastText(state.bg_color);
+    });
+    // Counter "X / Y" in accent (this lives on the recto card)
+    cardEl.querySelectorAll('.text-ox-soft, .text-ox').forEach(el => {
+      el.style.color = state.accent_color;
+    });
+  }
+
+  function refreshAllVisuals() {
+    const recto = $('previewCard');
+    const verso = $('previewVerso');
+    applyBgToCard(recto);
+    applyBgToCard(verso);
+    applyAccentToCard(recto);
+    applyAccentToCard(verso);
+    // Names / rewards
+    document.querySelectorAll('[data-preview="name"]').forEach(el => el.textContent = state.name);
+    document.querySelectorAll('[data-preview="reward"]').forEach(el => el.textContent = state.reward_description);
   }
 
   function wireSwatches() {
@@ -964,16 +1006,25 @@
       const swatches = section.querySelectorAll('.swatch');
       swatches.forEach(sw => {
         const style = sw.getAttribute('style') || '';
-        const m = style.match(/background\s*:\s*(#[0-9a-fA-F]{3,8})/);
-        if (!m) return;
-        const color = m[1];
+        const m2 = style.match(/background\s*:\s*(#[0-9a-fA-F]{3,8})/);
+        if (!m2) return;
+        const color = m2[1];
         sw.style.cursor = 'pointer';
         sw.addEventListener('click', () => {
           swatches.forEach(s => s.classList.remove('active'));
           sw.classList.add('active');
-          if (isBg) { state.bg_color = color; state.text_color = getContrastText(color); }
-          else if (isAccent) { state.accent_color = color; }
-          updatePreview();
+          if (isBg) {
+            state.bg_color = color;
+            state.text_color = getContrastText(color);
+            applyBgToCard($('previewCard'));
+            applyBgToCard($('previewVerso'));
+            applyAccentToCard($('previewCard'));
+            applyAccentToCard($('previewVerso'));
+          } else if (isAccent) {
+            state.accent_color = color;
+            applyAccentToCard($('previewCard'));
+            applyAccentToCard($('previewVerso'));
+          }
         });
         sw.classList.toggle('active',
           (isBg && color.toLowerCase() === (state.bg_color || '').toLowerCase()) ||
@@ -984,9 +1035,13 @@
   }
 
   function wireInputs() {
-    if ($('cardName')) $('cardName').addEventListener('input', e => { state.name = e.target.value; updatePreview(); });
-    if ($('rewardDescription')) $('rewardDescription').addEventListener('input', e => { state.reward_description = e.target.value; updatePreview(); });
+    if ($('cardName')) $('cardName').addEventListener('input', e => { state.name = e.target.value; refreshAllVisuals(); });
+    if ($('rewardDescription')) $('rewardDescription').addEventListener('input', e => { state.reward_description = e.target.value; refreshAllVisuals(); });
     if ($('stampsRequired')) $('stampsRequired').addEventListener('input', e => { state.stamps_required = parseInt(e.target.value, 10) || 10; });
+    if ($('notifTitle')) $('notifTitle').addEventListener('input', e => { state.notif_title = e.target.value; });
+    if ($('notifBody')) $('notifBody').addEventListener('input', e => { state.notif_body = e.target.value; });
+    if ($('notifTone')) $('notifTone').addEventListener('change', e => { state.notif_tone = e.target.value; });
+    if ($('notifSignature')) $('notifSignature').addEventListener('input', e => { state.notif_signature = e.target.value; });
   }
 
   function showStatus(msg, isError = false) {
@@ -1015,6 +1070,10 @@
       text_color: state.text_color,
       logo_url: state.logo_url,
       font_family: state.font_family,
+      notif_title: state.notif_title || null,
+      notif_body: state.notif_body || null,
+      notif_tone: state.notif_tone || 'warm',
+      notif_signature: state.notif_signature || null,
       is_published: true
     };
     try {
@@ -1034,7 +1093,7 @@
   applyToInputs();
   wireSwatches();
   wireInputs();
-  updatePreview();
+  refreshAllVisuals();
   const pb = $('publishBtn');
   if (pb) pb.addEventListener('click', e => { e.preventDefault(); publish(); });
 </script>
