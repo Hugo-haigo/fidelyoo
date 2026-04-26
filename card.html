@@ -29,7 +29,7 @@
       <h1 class="font-serif text-4xl mb-2" id="cardTitle">Carte de fidelite</h1>
       <p class="text-gray-600 text-sm" id="cardReward"></p>
     </div>
-    <div class="rounded-2xl p-6 mb-6 text-white" style="background:linear-gradient(135deg,#0E0E10 0%,#2a2a30 100%);">
+    <div id="cardBoxSignup" class="rounded-2xl p-6 mb-6" style="background:#0E0E10;color:#FFFFFF;">
       <div class="flex justify-between items-start mb-8">
         <div>
           <div class="text-xs opacity-60 uppercase tracking-widest" id="cardBrand">FIDELYOO</div>
@@ -55,7 +55,7 @@
       <h1 class="font-serif text-3xl">Bienvenue !</h1>
       <p class="text-gray-600 text-sm mt-1" id="welcomeName"></p>
     </div>
-    <div class="rounded-2xl p-6 mb-6 text-white" style="background:linear-gradient(135deg,#0E0E10 0%,#2a2a30 100%);">
+    <div id="cardBoxLive" class="rounded-2xl p-6 mb-6" style="background:#0E0E10;color:#FFFFFF;">
       <div class="flex justify-between items-start mb-6">
         <div>
           <div class="text-xs opacity-60 uppercase tracking-widest">FIDELYOO</div>
@@ -75,6 +75,34 @@
   function ensureQR(){return new Promise((res,rej)=>{if(typeof qrcode!=='undefined')return res();const s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js';s.onload=()=>res();s.onerror=()=>rej(new Error('QR lib load failed'));document.head.appendChild(s);});}
 
   import { supabase } from './js/supabase-client.js';
+  function applyCardColors(card, boxId) {
+    const box = document.getElementById(boxId);
+    if (!box) return;
+    const bg = card.bg_color || '#0E0E10';
+    const accent = card.accent_color || '#9A2232';
+    const text = card.text_color || '#FFFFFF';
+    box.style.background = bg;
+    box.style.color = text;
+    // Cascade text colors
+    box.querySelectorAll('*').forEach(el => { el.style.color = text; });
+    // Stamps: filled use accent, empty use border in textColor with transparency
+    box.querySelectorAll('.stamp.filled').forEach(el => {
+      el.style.background = accent;
+      el.style.borderColor = accent;
+      el.style.color = text;
+    });
+    box.querySelectorAll('.stamp:not(.filled)').forEach(el => {
+      el.style.borderColor = text;
+      el.style.opacity = '0.3';
+    });
+    // QR background block stays white
+    box.querySelectorAll('.bg-white').forEach(el => {
+      el.style.background = '#FFFFFF';
+      el.style.color = '#0E0E10';
+      el.querySelectorAll('*').forEach(c => { c.style.color = '#0E0E10'; });
+    });
+  }
+
   const params = new URLSearchParams(location.search);
   const merchantSlug = params.get('m');
   const customerQr = params.get('c');
@@ -100,7 +128,7 @@
         document.getElementById('merchantTag').textContent = merchant.business_name;
         document.getElementById('cardBrand').textContent = (merchant.business_name||'').toUpperCase();
         document.getElementById('cardBrandName').textContent = card.name;
-        document.getElementById('cardTitle').textContent = card.name;
+        document.getElementById('cardTitle').textContent = card.name; applyCardColors(card, 'cardBoxSignup');
         document.getElementById('cardReward').textContent = card.reward_description;
         document.getElementById('rewardText').textContent = 'Recompense : ' + card.reward_description;
         buildStampGrid('stampGrid', Math.min(card.stamps_required, 10), 0);
@@ -111,7 +139,7 @@
   async function renderCardView(merchant, card, customer) {
     document.getElementById('cardViewMerchant').textContent = merchant.business_name;
     document.getElementById('welcomeName').textContent = customer.first_name + ' ' + customer.last_name;
-    document.getElementById('cardViewBrand').textContent = card.name;
+    document.getElementById('cardViewBrand').textContent = card.name; applyCardColors(card, 'cardBoxLive');
     document.getElementById('customerNumber').textContent = '#' + customer.qr_code.substring(0, 6).toUpperCase();
     const { data: stamps } = await supabase.from('stamps').select('stamps_count').eq('customer_id', customer.id);
     const totalStamps = (stamps || []).reduce((s, x) => s + (x.stamps_count || 0), 0);
