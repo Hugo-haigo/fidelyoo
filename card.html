@@ -115,13 +115,14 @@
   function show(id) { ['loading','signupView','cardView','errorBox'].forEach(x => { const el = document.getElementById(x); if (el) el.classList.toggle('hidden', x !== id); }); }
   function showError(msg) { const el = document.getElementById('errorBox'); el.textContent = msg; el.classList.remove('hidden'); }
   function buildStampGrid(gridId, total, filled) { const grid = document.getElementById(gridId); grid.innerHTML = ''; for (let i = 0; i < total; i++) { const d = document.createElement('div'); d.className = 'stamp' + (i < filled ? ' filled' : ''); grid.appendChild(d); } }
-  if (!merchantSlug) { show('errorBox'); showError('Lien invalide. Code commercant manquant.'); }
+  if (!merchantSlug) { try { merchantSlug = localStorage.getItem('fidelyoo_merchant_slug') || ''; } catch(e) {} } if (!merchantSlug) { show('errorBox'); showError('Lien invalide. Code commercant manquant.'); }
   else {
     try {
       const { data: merchant, error: mErr } = await supabase.from('merchants').select('*').eq('slug', merchantSlug).maybeSingle();
       if (mErr) throw mErr;
       if (!merchant) { showError('Commercant introuvable.'); show('errorBox'); throw new Error('no merchant'); }
       const { data: card, error: cErr } = await supabase.from('cards').select('*').eq('merchant_id', merchant.id).eq('is_published', true).order('created_at', { ascending: false }).limit(1).maybeSingle();
+      try { localStorage.setItem('fidelyoo_merchant_slug', merchantSlug); localStorage.setItem('fidelyoo_merchant_id', merchant.id); window.__currentMerchantId = merchant.id; } catch(e) {}
       if (cErr) throw cErr;
       if (!card) { showError('Aucune carte publiee pour ce commercant.'); show('errorBox'); throw new Error('no card'); }
       window.__merchant = merchant;
@@ -221,12 +222,36 @@
     pushBtn.addEventListener('click', async () => {
       try {
         const perm = await Notification.requestPermission();
-        if (perm === 'granted') {
-          pushBtn.style.display = 'none';
-          const reg = await navigator.serviceWorker.ready;
-          reg.showNotification('Fidelyoo', { body: 'Notifications activées 🎉', icon: 'https://api.dicebear.com/7.x/shapes/png?seed=fidelyoo&backgroundColor=0b0b0c&size=192' });
-          try { localStorage.setItem('fidelyoo_push', '1'); } catch(e) {}
+        if (perm !== 'granted') return;
+        pushBtn.style.display = 'none';
+        const reg = await navigator.serviceWorker.ready;
+        const VAPID_PUBLIC = 'BG_GV3NO_ecwaopgNSKVCO4iEFZR35-IHgQicdE-FyHbI8sF1J0e7g0N_j-Wj1qJt94DAI0uGQsh7bTeBuxNIkU';
+        function urlB64ToUint8(base64String) {
+          const padding = '='.repeat((4 - base64String.length % 4) % 4);
+          const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+          const raw = atob(base64);
+          const arr = new Uint8Array(raw.length);
+          for (let i = 0; i < raw.length; ++i) arr[i] = raw.charCodeAt(i);
+          return arr;
         }
+        let sub;
+        try {
+          sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: urlB64ToUint8(VAPID_PUBLIC) });
+        } catch(e) { console.warn('subscribe failed', e); }
+        const merchantId = (window.__currentMerchantId || localStorage.getItem('fidelyoo_merchant_id') || '');
+        if (sub && merchantId && window.supabase) {
+          const j = sub.toJSON();
+          await window.supabase.from('push_subscriptions').upsert({
+            merchant_id: merchantId,
+            customer_id: localStorage.getItem('fidelyoo_customer_id') || null,
+            endpoint: j.endpoint,
+            p256dh: j.keys.p256dh,
+            auth: j.keys.auth,
+            user_agent: navigator.userAgent
+          }, { onConflict: 'endpoint' });
+        }
+        reg.showNotification('Fidelyoo', { body: 'Notifications activées 🎉', icon: 'https://api.dicebear.com/7.x/shapes/png?seed=fidelyoo&backgroundColor=0b0b0c&size=192' });
+        try { localStorage.setItem('fidelyoo_push', '1'); } catch(e) {}
       } catch(e) { console.warn(e); }
     });
   }
