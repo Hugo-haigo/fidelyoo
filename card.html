@@ -4,6 +4,12 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
 <title>Fidelyoo — Ma carte de fidélité</title>
+<link rel="manifest" href="/fidelyoo/manifest.json" />
+<meta name="theme-color" content="#0b0b0c" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="Fidelyoo" />
+<link rel="apple-touch-icon" href="https://api.dicebear.com/7.x/shapes/png?seed=fidelyoo&backgroundColor=0b0b0c&size=180" />
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter+Tight:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -172,6 +178,59 @@
       location.href = location.pathname + '?m=' + merchant.slug + '&c=' + data.qr_code;
     } catch (err) { console.error(err); showError(err.message || 'Erreur inconnue'); submitBtn.disabled = false; submitBtn.textContent = 'Activer ma carte'; }
   });
+</script>
+
+<button id="pwaInstall" style="position:fixed;bottom:18px;left:50%;transform:translateX(-50%);z-index:9999;display:none;padding:12px 22px;border-radius:999px;border:none;background:#fff;color:#0b0b0c;font:600 14px/1 system-ui,-apple-system,sans-serif;box-shadow:0 8px 30px rgba(0,0,0,.35);cursor:pointer;">📲 Installer la carte</button>
+<button id="pwaPush" style="position:fixed;bottom:18px;right:14px;z-index:9999;display:none;padding:10px 14px;border-radius:999px;border:1px solid rgba(255,255,255,.25);background:rgba(0,0,0,.55);color:#fff;font:600 13px/1 system-ui,-apple-system,sans-serif;backdrop-filter:blur(10px);cursor:pointer;">🔔 Activer les notifications</button>
+<script>
+(function(){
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/fidelyoo/service-worker.js', { scope: '/fidelyoo/' }).catch(e => console.warn('SW reg failed', e));
+    });
+  }
+  let deferredPrompt = null;
+  const installBtn = document.getElementById('pwaInstall');
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    if (installBtn) installBtn.style.display = 'inline-block';
+  });
+  if (installBtn) {
+    installBtn.addEventListener('click', async () => {
+      if (!deferredPrompt) return;
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      deferredPrompt = null;
+      installBtn.style.display = 'none';
+    });
+  }
+  window.addEventListener('appinstalled', () => { if (installBtn) installBtn.style.display = 'none'; });
+  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone;
+  if (isIOS && !isStandalone && installBtn) {
+    installBtn.textContent = '📲 Ajouter à l\u2019écran d\u2019accueil';
+    installBtn.style.display = 'inline-block';
+    installBtn.addEventListener('click', () => {
+      alert('Sur iPhone : appuyez sur le bouton Partager puis « Sur l\u2019écran d\u2019accueil ».');
+    });
+  }
+  const pushBtn = document.getElementById('pwaPush');
+  if (pushBtn && 'Notification' in window && 'serviceWorker' in navigator) {
+    if (Notification.permission === 'default') pushBtn.style.display = 'inline-block';
+    pushBtn.addEventListener('click', async () => {
+      try {
+        const perm = await Notification.requestPermission();
+        if (perm === 'granted') {
+          pushBtn.style.display = 'none';
+          const reg = await navigator.serviceWorker.ready;
+          reg.showNotification('Fidelyoo', { body: 'Notifications activées 🎉', icon: 'https://api.dicebear.com/7.x/shapes/png?seed=fidelyoo&backgroundColor=0b0b0c&size=192' });
+          try { localStorage.setItem('fidelyoo_push', '1'); } catch(e) {}
+        }
+      } catch(e) { console.warn(e); }
+    });
+  }
+})();
 </script>
 </body>
 </html>
