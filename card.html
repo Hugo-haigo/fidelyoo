@@ -282,8 +282,8 @@ async function addToGoogleWallet() {
       body: JSON.stringify({ merchant_id: merchantId, customer_id: customerId, customer_name: customerName, merchant_name: merchantName, stamp_count: stampCount, max_stamps: maxStamps, slug: slug })
     });
     const data = await r.json();
-    if (data.saveUrl) {
-      window.open(data.saveUrl, '_blank');
+    if (data.saveLink) {
+      window.open(data.saveLink, '_blank');
     } else {
       alert('Erreur: ' + (data.error || 'Réponse inattendue'));
     }
