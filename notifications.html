@@ -175,7 +175,7 @@
       </div>
       <div><label class="lbl">Titre</label><input id="nTitle" type="text" class="inp" placeholder="Une attention pour vous"/></div>
       <div><label class="lbl">Message</label><textarea id="nBody" rows="3" class="inp" style="resize:vertical;font-family:inherit"></textarea></div>
-      <button type="submit" class="px-5 h-11 rounded-lg bg-ink text-paper font-medium text-[14px]">Envoyer en test (notification locale)</button>
+      <button type="submit" class="px-5 h-11 rounded-lg bg-ink text-paper font-medium text-[14px]">Envoyer la notification push</button>
       <p id="nStatus" class="text-[13px]"></p>
     </form>
   </div>
@@ -209,13 +209,27 @@
     const body = document.getElementById('nBody').value.trim();
     const status = document.getElementById('nStatus');
     if (!title || !body) { status.textContent = 'Titre et message requis'; status.style.color = '#b91c1c'; return; }
-    if ('Notification' in window && Notification.permission !== 'granted') {
-      const perm = await Notification.requestPermission();
-      if (perm !== 'granted') { status.textContent = 'Permission refusée'; status.style.color = '#b91c1c'; return; }
+    status.textContent = 'Envoi en cours...';
+    status.style.color = '#6b7280';
+    try {
+      const { data: { session: s } } = await supabase.auth.getSession();
+      const SUPABASE_URL = supabase.supabaseUrl || 'https://unxedrfzdnqurgmmujke.supabase.co';
+      const resp = await fetch(SUPABASE_URL + '/functions/v1/send-push', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + (s ? s.access_token : '')
+        },
+        body: JSON.stringify({ merchant_id: merchant.id, title, body, url: '/fidelyoo/card.html' })
+      });
+      const j = await resp.json();
+      if (!resp.ok) throw new Error(j.error || 'Erreur');
+      status.textContent = '✓ Envoyé : ' + (j.success || 0) + ' réussi(s) sur ' + (j.recipients || 0) + ' abonné(s)';
+      status.style.color = '#16a34a';
+    } catch (err) {
+      status.textContent = '✗ ' + (err.message || err);
+      status.style.color = '#b91c1c';
     }
-    new Notification(title, { body });
-    status.textContent = '✓ Notification de test affichée';
-    status.style.color = '#16a34a';
   });
 </script>
 </body>
