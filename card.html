@@ -13,7 +13,47 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter+Tight:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.tailwindcss.com">
+// Google Wallet
+async function addToGoogleWallet() {
+  const btn = document.getElementById('googleWalletBtn');
+  btn.disabled = true;
+  btn.textContent = 'Génération en cours...';
+  try {
+    const slug = new URLSearchParams(location.search).get('merchant') || localStorage.getItem('merchant_slug');
+    const supabase = window._supabase;
+    const { data: { user } } = await supabase.auth.getUser();
+    const customerId = user?.id || 'guest_' + Date.now();
+    const customerName = user?.user_metadata?.full_name || user?.email || 'Client';
+    const { data: merchant } = await supabase.from('merchants').select('id,business_name,card_settings').or(slug ? 'slug.eq.' + slug + ',business_name.eq.' + slug : 'id.neq.0').single();
+    const merchantId = merchant?.id || slug || 'default';
+    const merchantName = merchant?.business_name || 'Fidelyoo';
+    const settings = merchant?.card_settings || {};
+    const { data: stamps } = await supabase.from('loyalty_cards').select('stamp_count,total_stamps').eq('merchant_id', merchantId).eq('customer_id', customerId).single();
+    const SUPABASE_URL = 'https://unxedrfzdnqurgmmujke.supabase.co';
+    const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVueGVkcmZ6ZG5xdXJnbW11amtlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDU3MDk1ODMsImV4cCI6MjA2MTI4NTU4M30.Q0BhBNPVXQoEVbNnaSRIaXqNZf1Tnu0GFZK3fBhNa5o';
+    const res = await fetch(SUPABASE_URL + '/functions/v1/generate-google-pass', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + SUPABASE_ANON },
+      body: JSON.stringify({ merchant_id: merchantId, customer_id: customerId, customer_name: customerName, merchant_name: merchantName, stamp_count: stamps?.stamp_count || 0, total_stamps: stamps?.total_stamps || settings.total_stamps || 10, bg_color: settings.bg_color || '#1a1a2e', accent_color: settings.accent_color || '#e94560' })
+    });
+    const data = await res.json();
+    if (data.saveLink) { window.location.href = data.saveLink; }
+    else { throw new Error(data.error || 'Erreur inconnue'); }
+  } catch(e) {
+    alert('Erreur: ' + e.message);
+    btn.disabled = false;
+    btn.textContent = '\u{1F4F2} Ajouter à Google Wallet';
+  }
+}
+if (!/iPad|iPhone|iPod/.test(navigator.userAgent)) {
+  document.addEventListener('DOMContentLoaded', function() {
+    const gwBtn = document.getElementById('googleWalletBtn');
+    if (gwBtn) gwBtn.style.display = 'block';
+  });
+}
+
+</script>
 <style>
   body { font-family: 'Inter Tight', system-ui, sans-serif; background: #FAFAF7; color: #0E0E10; }
   .font-serif { font-family: 'Instrument Serif', 'Times New Roman', serif; }
@@ -183,6 +223,7 @@
 
 <button id="pwaInstall" style="position:fixed;bottom:18px;left:50%;transform:translateX(-50%);z-index:9999;display:none;padding:12px 22px;border-radius:999px;border:none;background:#fff;color:#0b0b0c;font:600 14px/1 system-ui,-apple-system,sans-serif;box-shadow:0 8px 30px rgba(0,0,0,.35);cursor:pointer;">📲 Installer la carte</button>
 <button id="pwaPush" style="position:fixed;bottom:18px;right:14px;z-index:9999;display:none;padding:10px 14px;border-radius:999px;border:1px solid rgba(255,255,255,.25);background:rgba(0,0,0,.55);color:#fff;font:600 13px/1 system-ui,-apple-system,sans-serif;backdrop-filter:blur(10px);cursor:pointer;">🔔 Activer les notifications</button>
+<button id="googleWalletBtn" onclick="addToGoogleWallet()" style="display:none;margin:8px auto;padding:12px 20px;background:#4285f4;color:#fff;border:none;border-radius:12px;font:600 13px/1 system-ui,-apple-system,sans-serif;cursor:pointer;">📲 Ajouter à Google Wallet</button>
 <script>
 (function(){
   if ('serviceWorker' in navigator) {
