@@ -170,6 +170,10 @@
           <input id="search-input" type="text" placeholder="Rechercher..." class="h-9 w-[320px] pl-9 pr-3 rounded-md bg-paper-2 border border-line text-[13px] placeholder:text-mute focus:outline-none focus:border-ink transition-colors"/>
         </div>
         <button id="export-csv" class="h-9 px-3 inline-flex items-center gap-1.5 rounded-md border border-line text-[13px] hover:bg-paper-2 transition-colors">Export CSV</button>
+<button onclick="openNewClientModal()" style="background:#111827;color:#fff;border:1px solid #374151;padding:8px 16px;border-radius:8px;font:500 13px/1.4 system-ui,sans-serif;cursor:pointer;display:inline-flex;align-items:center;gap:6px;">
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+  Nouveau client
+</button>
       </div>
     </div>
   </header>
@@ -715,6 +719,26 @@ import { supabase } from './js/supabase-client.js';
     render(customers||[]);
   });
 })();
+
+function openNewClientModal(){const m=document.getElementById("newClientModal");m.style.display="flex";["ncFirstName","ncLastName","ncEmail","ncPhone"].forEach(id=>{document.getElementById(id).value="";});document.getElementById("ncError").style.display="none";}
+function closeNewClientModal(){document.getElementById("newClientModal").style.display="none";}
+async function submitNewClient(){const fn=document.getElementById("ncFirstName").value.trim();const ln=document.getElementById("ncLastName").value.trim();const em=document.getElementById("ncEmail").value.trim();const ph=document.getElementById("ncPhone").value.trim();const err=document.getElementById("ncError");if(!fn||!ln){err.textContent="Prénom et nom obligatoires.";err.style.display="block";return;}const btn=document.getElementById("ncSubmitBtn");btn.disabled=true;btn.textContent="Ajout...";try{const sb=window.supabase||window._supabase;const{data:{user}}=await sb.auth.getUser();const{data:merchant}=await sb.from("merchants").select("id").eq("user_id",user.id).single();if(!merchant)throw new Error("Marchand introuvable");const{data:customer,error:ce}=await sb.from("customers").insert({merchant_id:merchant.id,first_name:fn,last_name:ln,email:em||null,phone:ph||null,created_at:new Date().toISOString()}).select().single();if(ce)throw ce;const{data:card}=await sb.from("cards").select("id,total_stamps").eq("merchant_id",merchant.id).limit(1).single();if(card){await sb.from("loyalty_cards").insert({merchant_id:merchant.id,customer_id:customer.id,card_id:card.id,stamp_count:0,total_stamps:card.total_stamps||10,created_at:new Date().toISOString()});}closeNewClientModal();if(typeof loadClients==="function")loadClients();else if(typeof renderClients==="function")renderClients();else location.reload();}catch(e){err.textContent="Erreur: "+e.message;err.style.display="block";}finally{btn.disabled=false;btn.textContent="Ajouter";}}
 </script>
+
+<!-- Modal Nouveau Client -->
+<div id="newClientModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:999;align-items:center;justify-content:center;">
+<div style="background:#fff;border-radius:16px;padding:28px;width:420px;max-width:95vw;">
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;"><h3 style="font:600 17px/1 system-ui;margin:0;">Nouveau client</h3><button onclick="closeNewClientModal()" style="background:none;border:none;cursor:pointer;font-size:20px;">&#x2715;</button></div>
+<div style="display:flex;flex-direction:column;gap:14px;">
+<div><label style="font:500 12px system-ui;color:#6b7280;display:block;margin-bottom:6px;">Prénom *</label><input id="ncFirstName" type="text" placeholder="Jean" style="width:100%;padding:10px 12px;border:1px solid #e5e7eb;border-radius:8px;font:14px system-ui;box-sizing:border-box;"/></div>
+<div><label style="font:500 12px system-ui;color:#6b7280;display:block;margin-bottom:6px;">Nom *</label><input id="ncLastName" type="text" placeholder="Dupont" style="width:100%;padding:10px 12px;border:1px solid #e5e7eb;border-radius:8px;font:14px system-ui;box-sizing:border-box;"/></div>
+<div><label style="font:500 12px system-ui;color:#6b7280;display:block;margin-bottom:6px;">Email</label><input id="ncEmail" type="email" placeholder="jean@email.com" style="width:100%;padding:10px 12px;border:1px solid #e5e7eb;border-radius:8px;font:14px system-ui;box-sizing:border-box;"/></div>
+<div><label style="font:500 12px system-ui;color:#6b7280;display:block;margin-bottom:6px;">Téléphone</label><input id="ncPhone" type="tel" placeholder="+33 6 00 00 00 00" style="width:100%;padding:10px 12px;border:1px solid #e5e7eb;border-radius:8px;font:14px system-ui;box-sizing:border-box;"/></div>
+</div>
+<div id="ncError" style="display:none;color:#dc2626;font:13px system-ui;margin-top:12px;"></div>
+<div style="display:flex;gap:10px;margin-top:20px;">
+<button onclick="closeNewClientModal()" style="flex:1;padding:11px;border:1px solid #e5e7eb;background:#fff;border-radius:8px;font:500 14px system-ui;cursor:pointer;">Annuler</button>
+<button onclick="submitNewClient()" id="ncSubmitBtn" style="flex:1;padding:11px;background:#111827;color:#fff;border:none;border-radius:8px;font:500 14px system-ui;cursor:pointer;">Ajouter</button>
+</div></div></div>
 </body>
 </html>
