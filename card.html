@@ -75,6 +75,10 @@
       <div class="text-[10px] opacity-50 text-center mt-2 uppercase tracking-wider">Presentez ce QR au commercant</div>
     </div>
     <div class="text-center text-xs text-gray-500" id="rewardStatus"></div>
+  <div id="walletCTA" class="mt-5">
+    <button id="googleWalletBtn" onclick="addToGoogleWallet()" style="display:none;width:100%;padding:14px 24px;background:#4285f4;color:#fff;border:none;border-radius:14px;font:700 15px/1 'Inter Tight',system-ui,sans-serif;cursor:pointer;letter-spacing:.3px;box-shadow:0 4px 16px rgba(66,133,244,.45);">📲 Ajouter à Google Wallet</button>
+    <p id="walletInstallHint" style="display:none;margin-top:10px;text-align:center;font-size:12px;color:#6b7280;">Pas encore l'app Wallet ? <a href="https://play.google.com/store/apps/details?id=com.google.android.apps.walletnfcrel" target="_blank" style="color:#4285f4;text-decoration:underline;">Installer gratuitement</a></p>
+  </div>
   </div>
 </div>
 <script type="module">
@@ -183,7 +187,8 @@
 
 <button id="pwaInstall" style="position:fixed;bottom:18px;left:50%;transform:translateX(-50%);z-index:9999;display:none;padding:12px 22px;border-radius:999px;border:none;background:#fff;color:#0b0b0c;font:600 14px/1 system-ui,-apple-system,sans-serif;box-shadow:0 8px 30px rgba(0,0,0,.35);cursor:pointer;">📲 Installer la carte</button>
 <button id="pwaPush" style="position:fixed;bottom:18px;right:14px;z-index:9999;display:none;padding:10px 14px;border-radius:999px;border:1px solid rgba(255,255,255,.25);background:rgba(0,0,0,.55);color:#fff;font:600 13px/1 system-ui,-apple-system,sans-serif;backdrop-filter:blur(10px);cursor:pointer;">🔔 Activer les notifications</button>
-<button id="googleWalletBtn" onclick="addToGoogleWallet()" style="display:none;margin:8px auto;padding:14px 24px;background:#4285f4;color:#fff;border:none;border-radius:12px;font:700 14px/1 system-ui,-apple-system,sans-serif;cursor:pointer;letter-spacing:.3px;box-shadow:0 2px 8px rgba(66,133,244,.4);">📲 Ajouter à Google Wallet</button>
+
+
 <script>
 (function(){
   if ('serviceWorker' in navigator) {
@@ -262,30 +267,33 @@
 // ── Google Wallet ────────────────────────────────────────────────────────────────
 async function addToGoogleWallet() {
   const btn = document.getElementById('googleWalletBtn');
+  if (!btn) return;
   btn.disabled = true;
   btn.textContent = 'Génération…';
   try {
     const params = new URLSearchParams(location.search);
     const slug = params.get('m') || localStorage.getItem('merchant_slug') || '';
-    const customerId = params.get('c') || 'guest_' + Date.now();
+    const customerId = params.get('c') || localStorage.getItem('fidelyoo_customer_id') || 'guest_' + Date.now();
     const customerName = (document.getElementById('welcomeName') && document.getElementById('welcomeName').textContent.trim()) || 'Client';
-    const merchantNameEl = document.querySelector('#merchantName,[data-merchant-name]');
-    const merchantName = merchantNameEl ? merchantNameEl.textContent.trim() : (window.__merchantDisplayName || 'Restaurant');
+    const merchantName = (document.getElementById('cardViewBrand') && document.getElementById('cardViewBrand').textContent.trim()) || (window.__merchantDisplayName || 'Restaurant');
     const merchantId = window.__currentMerchantId || localStorage.getItem('fidelyoo_merchant_id') || '';
-    const stampsEl = document.getElementById('stampsCount');
-    const stampCount = stampsEl ? parseInt(stampsEl.textContent) || 0 : 0;
-    const maxStampsEl = document.getElementById('maxStamps');
-    const maxStamps = maxStampsEl ? parseInt(maxStampsEl.textContent) || 10 : 10;
-    const r = await fetch(SUPABASE_URL + '/functions/v1/generate-google-pass', {
+    const liveGrid = document.getElementById('liveStampGrid');
+    const stampCount = liveGrid ? liveGrid.querySelectorAll('.stamp.filled,[data-stamped]').length : 0;
+    const liveText = document.getElementById('liveStampText');
+    const maxMatch = liveText ? liveText.textContent.match(/(\d+)/) : null;
+    const maxStamps = maxMatch ? parseInt(maxMatch[1]) : 10;
+    const r = await fetch('https://unxedrfzdnqurgmmujke.supabase.co/functions/v1/generate-google-pass', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + SUPABASE_ANON },
+      headers: { 'Content-Type': 'application/json', 'apikey': 'sb_publishable_jYq6vIYSFZ_z8qVSCiBo0A_fK8_mC45' },
       body: JSON.stringify({ merchant_id: merchantId, customer_id: customerId, customer_name: customerName, merchant_name: merchantName, stamp_count: stampCount, max_stamps: maxStamps, slug: slug })
     });
     const data = await r.json();
     if (data.saveLink) {
       window.open(data.saveLink, '_blank');
     } else {
-      alert('Erreur: ' + (data.error || 'Réponse inattendue'));
+      const hint = document.getElementById('walletInstallHint');
+      if (hint) hint.style.display = 'block';
+      alert('Erreur: ' + (data.error || JSON.stringify(data)));
     }
   } catch(e) {
     alert('Erreur: ' + e.message);
@@ -294,12 +302,18 @@ async function addToGoogleWallet() {
   btn.textContent = '📲 Ajouter à Google Wallet';
 }
 (function() {
-  function showWalletBtn() {
-    const b = document.getElementById('googleWalletBtn');
-    if (b && !/iPad|iPhone|iPod/.test(navigator.userAgent)) b.style.display = 'block';
+  function setupWalletBtn() {
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    const cta = document.getElementById('walletCTA');
+    const btn = document.getElementById('googleWalletBtn');
+    const hint = document.getElementById('walletInstallHint');
+    if (isIOS) { if (cta) cta.style.display = 'none'; return; }
+    if (btn) btn.style.display = 'block';
+    const isAndroid = /Android/i.test(navigator.userAgent);
+    if (isAndroid && hint) hint.style.display = 'block';
   }
-  if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', showWalletBtn); }
-  else { showWalletBtn(); }
+  if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', setupWalletBtn); }
+  else { setupWalletBtn(); }
 })();
 </script>
 </body>
