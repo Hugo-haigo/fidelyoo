@@ -9,7 +9,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter+Tight:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="tailwind.config.js"></script>
-<script>tailwind.config = window.fidelyooTailwindConfig;</script>
+<script>tailwind.config = window.fidelyooTailwindConfig;</scipt>
 <style>
   html, body { height: 100%; }
   body { font-family: 'Inter Tight', ui-sans-serif, system-ui, sans-serif; -webkit-font-smoothing: antialiased; color: #0E0E10; background: #FAFAF7; }
@@ -176,6 +176,9 @@
               Rester connecté
             </label>
 
+            <div class="flex justify-end mb-1">
+              <button type="button" id="forgotPasswordBtn" class="text-[12px] text-muted hover:text-primary transition-colors">Mot de passe oublié ?</button>
+            </div>
             <button type="submit" class="w-full h-12 rounded-lg bg-ink text-paper text-[14px] font-medium hover:bg-ink-soft transition-colors flex items-center justify-center gap-2 group">
               Se connecter
               <span class="transition-transform group-hover:translate-x-1">→</span>
@@ -595,8 +598,8 @@
             slug,
             email
           });
-          if (mErr) throw mErr;
-          window.location.href = 'app.html';
+          if (mErr && mErr.code !== '23505') throw mErr;
+          if (data.session) { window.location.href = 'app.html'; } else { submitBtn.disabled=false; submitBtn.innerHTML=originalLabel; const eb=document.getElementById('authError'); eb.style.background='#d1fae5'; eb.style.color='#065f46'; eb.textContent='Compte créé ! Vérifiez votre email.'; eb.style.display='block'; }session) { window.location.href = 'app.html'; } else { submitBtn.disabled=false; submitBtn.innerHTML=originalLabel; const eb=document.getElementById('authError'); eb.style.background='#d1fae5'; eb.style.color='#065f46'; eb.textContent='Compte créé ! Vérifiez votre email pour activer votre compte.'; eb.style.display='block'; }
         } else {
           const { error } = await supabase.auth.signInWithPassword({ email, password });
           if (error) throw error;
@@ -609,6 +612,71 @@
         submitBtn.innerHTML = originalLabel;
       }
     });
-  </script>
+  
+
+  // Forgot password functionality
+  const forgotBtn = document.getElementById('forgotPasswordBtn');
+  const forgotModal = document.getElementById('forgotModal');
+  const forgotClose = document.getElementById('forgotClose');
+  const forgotForm = document.getElementById('forgotForm');
+  const forgotEmail = document.getElementById('forgotEmail');
+  const forgotMsg = document.getElementById('forgotMsg');
+
+  if (forgotBtn) {
+    forgotBtn.addEventListener('click', () => {
+      forgotModal.classList.remove('hidden');
+      forgotModal.classList.add('flex');
+      forgotEmail.value = document.getElementById('authEmail')?.value || '';
+    });
+  }
+  if (forgotClose) {
+    forgotClose.addEventListener('click', () => {
+      forgotModal.classList.add('hidden');
+      forgotModal.classList.remove('flex');
+      forgotMsg.textContent = '';
+    });
+  }
+  if (forgotForm) {
+    forgotForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = forgotEmail.value.trim();
+      if (!email) return;
+      const submitBtn2 = forgotForm.querySelector('button[type="submit"]');
+      submitBtn2.disabled = true;
+      submitBtn2.textContent = 'Envoi...';
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: window.location.origin + '/reset-password.html'
+      });
+      if (error) {
+        forgotMsg.style.color = '#dc2626';
+        forgotMsg.textContent = error.message;
+      } else {
+        forgotMsg.style.color = '#065f46';
+        forgotMsg.textContent = 'Email envoyé ! Vérifiez votre boîte mail.';
+      }
+      submitBtn2.disabled = false;
+      submitBtn2.textContent = 'Envoyer';
+    });
+  }
+</script>
+
+  <!-- Forgot Password Modal -->
+  <div id="forgotModal" class="hidden fixed inset-0 bg-black/50 z-50 items-center justify-center">
+    <div class="bg-white rounded-2xl p-8 w-full max-w-sm mx-4 shadow-xl">
+      <div class="flex items-center justify-between mb-6">
+        <h2 class="text-lg font-semibold text-[#0E0E10]">Mot de passe oublié</h2>
+        <button id="forgotClose" class="text-muted hover:text-primary transition-colors">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <p class="text-sm text-muted mb-4">Entrez votre email pour recevoir un lien de réinitialisation.</p>
+      <form id="forgotForm">
+        <input id="forgotEmail" type="email" placeholder="Votre email" required class="inp w-full mb-4" />
+        <button type="submit" class="w-full h-11 rounded-xl bg-[#9A2232] text-white font-semibold hover:bg-[#7d1c29] transition-colors">Envoyer</button>
+      </form>
+      <p id="forgotMsg" class="text-sm mt-3 text-center"></p>
+    </div>
+  </div>
+
 </body>
 </html>
