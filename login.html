@@ -599,7 +599,7 @@
             email
           });
           if (mErr && mErr.code !== '23505') throw mErr;
-          if (data.session) { window.location.href = 'app.html'; } else { submitBtn.disabled=false; submitBtn.innerHTML=originalLabel; const eb=document.getElementById('authError'); eb.style.background='#d1fae5'; eb.style.color='#065f46'; eb.textContent='Compte créé ! Vérifiez votre email.'; eb.style.display='block'; } { window.location.href = 'app.html'; } else { submitBtn.disabled=false; submitBtn.innerHTML=originalLabel; const eb=document.getElementById('authError'); eb.style.background='#d1fae5'; eb.style.color='#065f46'; eb.textContent='Compte créé ! Vérifiez votre email pour activer votre compte.'; eb.style.display='block'; }
+          if (data.session) { window.location.href = 'app.html'; } else { submitBtn.disabled=false; submitBtn.innerHTML=originalLabel; const eb=document.getElementById('authError'); eb.style.background='#d1fae5'; eb.style.color='#065f46'; eb.textContent='Compte créé ! Vérifiez votre email.'; eb.style.display='block'; }éé ! Vérifiez votre email pour activer votre compte.'; eb.style.display='block'; }
         } else {
           const { error } = await supabase.auth.signInWithPassword({ email, password });
           if (error) throw error;
