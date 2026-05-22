@@ -9,7 +9,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter+Tight:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="tailwind.config.js"></script>
-<script>tailwind.config = window.fidelyooTailwindConfig;</scipt>
+<script>tailwind.config = window.fidelyooTailwindConfig;</script>
 <style>
   html, body { height: 100%; }
   body { font-family: 'Inter Tight', ui-sans-serif, system-ui, sans-serif; -webkit-font-smoothing: antialiased; color: #0E0E10; background: #FAFAF7; }
@@ -599,7 +599,7 @@
             email
           });
           if (mErr && mErr.code !== '23505') throw mErr;
-          if (data.session) { window.location.href = 'app.html'; } else { submitBtn.disabled=false; submitBtn.innerHTML=originalLabel; const eb=document.getElementById('authError'); eb.style.background='#d1fae5'; eb.style.color='#065f46'; eb.textContent='Compte créé ! Vérifiez votre email.'; eb.style.display='block'; }session) { window.location.href = 'app.html'; } else { submitBtn.disabled=false; submitBtn.innerHTML=originalLabel; const eb=document.getElementById('authError'); eb.style.background='#d1fae5'; eb.style.color='#065f46'; eb.textContent='Compte créé ! Vérifiez votre email pour activer votre compte.'; eb.style.display='block'; }
+          if (data.session) { window.location.href = 'app.html'; } else { submitBtn.disabled=false; submitBtn.innerHTML=originalLabel; const eb=document.getElementById('authError'); eb.style.background='#d1fae5'; eb.style.color='#065f46'; eb.textContent='Compte créé ! Vérifiez votre email.'; eb.style.display='block'; } { window.location.href = 'app.html'; } else { submitBtn.disabled=false; submitBtn.innerHTML=originalLabel; const eb=document.getElementById('authError'); eb.style.background='#d1fae5'; eb.style.color='#065f46'; eb.textContent='Compte créé ! Vérifiez votre email pour activer votre compte.'; eb.style.display='block'; }
         } else {
           const { error } = await supabase.auth.signInWithPassword({ email, password });
           if (error) throw error;
