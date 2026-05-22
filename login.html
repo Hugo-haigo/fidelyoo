@@ -9,7 +9,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter+Tight:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="tailwind.config.js"></script>
-<script>tailwind.config = window.fidelyooTailwindConfig;</script>
+<script>tailwind.config = window.fidelyooTailwindConfig;</scrit>
 <style>
   html, body { height: 100%; }
   body { font-family: 'Inter Tight', ui-sans-serif, system-ui, sans-serif; -webkit-font-smoothing: antialiased; color: #0E0E10; background: #FAFAF7; }
@@ -184,6 +184,7 @@
               <span class="transition-transform group-hover:translate-x-1">→</span>
             </button>
           </form>
+<div id="authError" style="display:none;margin-top:14px;padding:10px 14px;border-radius:8px;background:#fee2e2;color:#b91c1c;font-size:13px;"></div>
 
           <div class="mt-8 pt-6 border-t border-line flex items-center gap-3 reveal d-3">
             <div class="w-9 h-9 rounded-lg bg-paper-2 grid place-items-center shrink-0 border border-line">
@@ -556,7 +557,6 @@
 
 
   <!-- Supabase auth -->
-  <div id="authError" style="display:none;margin-top:14px;padding:10px 14px;border-radius:8px;background:#fee2e2;color:#b91c1c;font-size:13px;"></div>
   <script type="module">
     import { supabase, slugify } from './js/supabase-client.js';
 
@@ -645,7 +645,7 @@
       submitBtn2.disabled = true;
       submitBtn2.textContent = 'Envoi...';
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: window.location.origin + '/reset-password.html'
+        redirectTo: 'https://hugo-haigo.github.io/fidelyoo/reset-password.html'
       });
       if (error) {
         forgotMsg.style.color = '#dc2626';
